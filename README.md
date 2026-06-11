@@ -6,6 +6,30 @@ Personal content archive and X-to-blog mirror. Imports selected posts from an X 
 
 **Stack:** Node.js 22+, TypeScript, Fastify, SQLite (WAL + FTS5), Eta templates, server-rendered HTML. Runs on one VPS.
 
+## Why this exists
+
+The pattern is borrowed from [levels.io](https://levels.io): mirror what you publish on X to a permanent, self-owned website. EchoPost packages that idea into a tool anyone can run.
+
+X is where you write and reach people — and with X Articles you can write long-form there too. The problem isn't the writing; it's that everything you publish on X stays locked inside a platform you don't control:
+
+- **Search engines can't reach it.** X gates posts behind login walls and limits crawlers, so your writing rarely shows up in Google and is invisible to anyone not already on the platform. A post gets its attention in the first 24 hours, then effectively disappears.
+- **The platform owns the rules.** Algorithms change, reach is throttled, accounts get restricted, links rot — your audience and your archive exist at someone else's discretion.
+
+EchoPost mirrors that content to a site you **fully control**: a permanent, SEO-friendly HTML page for every post, under your own domain and database.
+
+```
+idea → X post → automatic archive → searchable page → newsletter subscriber → future customer
+```
+
+That turns a 24-hour post into a lasting asset. The website becomes:
+
+- **Discoverable** — indexed by Google, navigable through tags, related posts, full-text search, RSS, and a sitemap, and served as plain HTML that AI tools can read, quote, and cite (a timeline is none of these).
+- **An owned audience** — every post carries a newsletter form, converting algorithm-dependent followers into email subscribers you can reach directly.
+- **Compounding** — related-post links form topic clusters, so each new post strengthens the whole archive and even short posts become long-tail landing pages.
+- **Yours** — the durable URL belongs to you, and every page links back to the original X post, so you keep the engagement without trusting the platform to keep your work alive.
+
+(EchoPost can also import an existing WordPress blog — see [`docs/wordpress-import.md`](docs/wordpress-import.md) — so prior writing lives under the same owned roof.)
+
 ## Quick start
 
 ```bash

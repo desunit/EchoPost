@@ -14,6 +14,7 @@ import { runMigrations } from "../db/migrate.js";
 import { config } from "../config/index.js";
 import { WordPressClient } from "../modules/wordpress/client.js";
 import { WordPressImportService } from "../modules/wordpress/import-service.js";
+import { RelatedPostsService } from "../modules/related-posts/service.js";
 
 const log = pino({ transport: { target: "pino-pretty" } });
 
@@ -43,6 +44,14 @@ const importer = new WordPressImportService(db, client, log);
 log.info({ baseUrl }, "starting WordPress import");
 const summary = await importer.runImport();
 log.info(summary, "WordPress import finished");
+
+// The worker (which normally recalculates related posts after an X import) isn't
+// running in this one-shot CLI, so recompute related posts inline — otherwise
+// imported posts show an empty "Related posts" section until the nightly job.
+if (summary.imported > 0) {
+  log.info("recalculating related posts…");
+  new RelatedPostsService(db).recalculateAll();
+}
 
 if (summary.errors.length > 0) {
   log.warn({ count: summary.errors.length, sample: summary.errors.slice(0, 10) }, "import completed with errors");

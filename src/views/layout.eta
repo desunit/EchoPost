@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="<%= it.base %>/assets/styles.css">
   <script src="<%= it.base %>/assets/theme.js"></script>
+  <% if (it.admin) { %><script src="<%= it.base %>/assets/admin.js" defer></script><% } %>
   <meta name="theme-color" content="#fcfbf7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
   <% if (it.jsonLd) { %><script type="application/ld+json"><%~ it.jsonLd %></script><% } %>

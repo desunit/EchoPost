@@ -80,8 +80,11 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     }
     (req as any).adminSession = sess;
     if (req.method !== "GET" && req.method !== "HEAD") {
+      // Multipart bodies aren't parsed into req.body; those routes validate the
+      // _csrf field themselves while streaming the parts (see media upload).
+      const isMultipart = (req.headers["content-type"] ?? "").startsWith("multipart/form-data");
       const body = (req.body ?? {}) as Record<string, string>;
-      if (req.url !== `${adminBase}/logout` && body._csrf !== sess.csrf_token) {
+      if (req.url !== `${adminBase}/logout` && !isMultipart && body._csrf !== sess.csrf_token) {
         reply.code(403);
         throw new Error("Invalid CSRF token");
       }
@@ -222,6 +225,53 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     s.posts.softDelete(id);
     s.auth.audit("post_delete", {}, "post", id);
     return reply.redirect(bp + "/admin/posts");
+  });
+
+  // Upload one or more images to an existing post. Multipart, so CSRF is checked
+  // here (the global preHandler skips multipart). The _csrf field must precede
+  // the file inputs in the form so it is validated before any bytes are stored.
+  app.post("/admin/posts/:id/media", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const post = s.posts.getById(id);
+    if (!post) return reply.callNotFound();
+    const sess = (req as any).adminSession;
+    let csrfOk = false;
+    let stored = 0;
+    for await (const part of req.parts()) {
+      if (part.type === "field" && part.fieldname === "_csrf") {
+        csrfOk = part.value === sess.csrf_token;
+        if (!csrfOk) {
+          reply.code(403);
+          throw new Error("Invalid CSRF token");
+        }
+      } else if (part.type === "file") {
+        if (!csrfOk) {
+          reply.code(403);
+          throw new Error("Invalid CSRF token");
+        }
+        const buf = await part.toBuffer();
+        if (part.file.truncated) {
+          reply.code(413);
+          throw new Error("Upload exceeds size limit");
+        }
+        if (buf.length === 0) continue;
+        try {
+          s.media.storeUpload({ postId: id, buffer: buf, mime: part.mimetype, fileName: part.filename });
+          stored++;
+        } catch {
+          // skip unsupported types; other valid files in the batch still upload
+        }
+      }
+    }
+    s.auth.audit("media_upload", { count: stored }, "post", id);
+    return reply.redirect(bp + `/admin/posts/${id}`);
+  });
+
+  app.post("/admin/posts/:id/media/:mediaId/delete", async (req, reply) => {
+    const { id, mediaId } = req.params as { id: string; mediaId: string };
+    s.media.removeUpload(mediaId);
+    s.auth.audit("media_delete", {}, "post", id);
+    return reply.redirect(bp + `/admin/posts/${id}`);
   });
 
   for (const [action, status] of [

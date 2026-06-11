@@ -636,8 +636,11 @@ button.chip { border: none; }
 }
 
 .media-grid { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0.6rem 0; }
-.media-grid img, .media-grid figure img { max-width: 130px; height: auto; }
-.media-grid figure { margin: 0; }
+.media-grid img, .media-grid figure img { max-width: 130px; height: auto; display: block; }
+.media-grid figure { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.media-grid figcaption { display: flex; gap: 0.3rem; align-items: center; }
+.media-grid figcaption button { font-size: 0.75rem; padding: 0.15rem 0.5rem; }
+.upload-form { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin: 0.4rem 0; }
 
 .error-cell { max-width: 240px; overflow-wrap: anywhere; white-space: normal !important; }
 

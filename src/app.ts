@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import fastifyCookie from "@fastify/cookie";
 import fastifyFormbody from "@fastify/formbody";
+import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
 import { Eta } from "eta";
 import path from "node:path";
@@ -98,6 +99,9 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
 
   await app.register(fastifyCookie, { secret: config.sessionSecret });
   await app.register(fastifyFormbody);
+  await app.register(fastifyMultipart, {
+    limits: { fileSize: config.media.maxDownloadBytes, files: 20 },
+  });
   await app.register(fastifyStatic, {
     root: path.join(rootDir, "public"),
     prefix: `${config.basePath}/assets/`,

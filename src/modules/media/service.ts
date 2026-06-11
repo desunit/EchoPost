@@ -54,6 +54,23 @@ export class MediaService {
   }
 
   /**
+   * Delete a media row. The underlying file is content-addressed and may be
+   * shared (dedupe), so it is only unlinked when no other row references it.
+   */
+  removeUpload(id: string): void {
+    const media = this.getById(id);
+    if (!media) return;
+    this.db.prepare("DELETE FROM media WHERE id = ?").run(id);
+    const stillUsed = this.db
+      .prepare("SELECT 1 FROM media WHERE storage_path = ? LIMIT 1")
+      .get(media.storage_path);
+    if (!stillUsed) {
+      const absolute = path.join(config.media.storagePath, media.storage_path);
+      if (absolute.startsWith(config.media.storagePath)) fs.rmSync(absolute, { force: true });
+    }
+  }
+
+  /**
    * Mirror a remote file locally (PRD 5.5). Enforces host allowlist,
    * blocks private addresses (SSRF), caps size, validates MIME, dedupes by
    * SHA-256, and extracts image dimensions.
@@ -88,6 +105,56 @@ export class MediaService {
       throw new Error(`Unsupported media MIME type: ${mime}`);
     }
 
+    return this.persist({
+      postId: input.postId,
+      buffer: buf,
+      mime,
+      sourceType: input.sourceType,
+      sourceUrl: input.sourceUrl,
+      altText: input.altText ?? null,
+      sortOrder: input.sortOrder ?? 0,
+    });
+  }
+
+  /**
+   * Store an admin-uploaded file (already in memory). Same dedupe/storage path as
+   * {@link mirrorRemote} but skips the network/SSRF checks since the bytes are local.
+   */
+  storeUpload(input: {
+    postId: string;
+    buffer: Buffer;
+    mime: string;
+    fileName?: string | null;
+    altText?: string | null;
+    sortOrder?: number;
+  }): MediaRow {
+    const mime = (input.mime || "application/octet-stream").split(";")[0]!.trim();
+    if (!ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p))) {
+      throw new Error(`Unsupported media MIME type: ${mime}`);
+    }
+    if (input.buffer.length > config.media.maxDownloadBytes) throw new Error("Media exceeds size cap");
+    return this.persist({
+      postId: input.postId,
+      buffer: input.buffer,
+      mime,
+      sourceType: "upload",
+      sourceUrl: input.fileName ? `upload:${input.fileName}` : "upload",
+      altText: input.altText ?? null,
+      sortOrder: input.sortOrder ?? 0,
+    });
+  }
+
+  /** Write bytes to content-addressed storage (deduped) and insert a media row. */
+  private persist(input: {
+    postId: string;
+    buffer: Buffer;
+    mime: string;
+    sourceType: string;
+    sourceUrl: string;
+    altText: string | null;
+    sortOrder: number;
+  }): MediaRow {
+    const { buffer: buf, mime } = input;
     const checksum = createHash("sha256").update(buf).digest("hex");
 
     // dedupe identical bytes: reuse the stored file, still create a media row per post
@@ -130,7 +197,7 @@ export class MediaService {
       )
       .run(
         id, input.postId, input.sourceType, input.sourceUrl, storagePath, publicUrl,
-        checksum, mime, width, height, input.altText ?? null, input.sortOrder ?? 0, nowIso(),
+        checksum, mime, width, height, input.altText, input.sortOrder, nowIso(),
       );
     return this.getById(id)!;
   }

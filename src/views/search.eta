@@ -1,0 +1,29 @@
+<% layout("layout") %>
+
+<h1>Search</h1>
+<form method="get" action="/search" class="search-form">
+  <input type="search" name="q" value="<%= it.q %>" placeholder="Search the archive…" autofocus>
+  <select name="sort">
+    <option value="relevance" <%= it.sort === 'relevance' ? 'selected' : '' %>>Relevance</option>
+    <option value="latest" <%= it.sort === 'latest' ? 'selected' : '' %>>Latest</option>
+    <option value="most_viewed" <%= it.sort === 'most_viewed' ? 'selected' : '' %>>Most viewed</option>
+    <option value="x_views" <%= it.sort === 'x_views' ? 'selected' : '' %>>X views</option>
+    <option value="blog_views" <%= it.sort === 'blog_views' ? 'selected' : '' %>>Blog views</option>
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+<% if (it.q) { %>
+  <p class="muted"><%= it.results.length %> results for “<%= it.q %>”</p>
+  <ul class="archive-list">
+    <% it.results.forEach(function(p) { %>
+      <li class="archive-item">
+        <span class="item-date"><%= it.formatDateShort(p.published_at) %></span>
+        <span class="item-main">
+          <a class="item-title" href="/<%= p.slug %>"><%= p.title %></a>
+          <% if (p.excerpt) { %><p class="muted" style="margin:.2rem 0 0"><%= p.excerpt %></p><% } %>
+        </span>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

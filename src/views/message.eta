@@ -1,0 +1,7 @@
+<% layout("layout") %>
+
+<section class="message-page">
+  <h1><%= it.heading %></h1>
+  <p><%= it.message %></p>
+  <p><a href="/">&larr; Back to the archive</a></p>
+</section>

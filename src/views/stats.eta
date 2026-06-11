@@ -1,0 +1,69 @@
+<% layout("layout") %>
+
+<h1>Stats</h1>
+
+<section class="stat-grid">
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalPosts) %></strong><span>posts</span></div>
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalWords) %></strong><span>words</span></div>
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalXViews) %></strong><span>X views</span></div>
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalBlogViews) %></strong><span>blog views</span></div>
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalCombinedViews) %></strong><span>combined views</span></div>
+  <div class="stat"><strong><%= it.formatNumber(it.stats.totalTags) %></strong><span>tags</span></div>
+  <% if (it.stats.firstYear) { %><div class="stat"><strong><%= it.stats.firstYear %></strong><span>first post</span></div><% } %>
+</section>
+
+<section>
+  <h2>Topics</h2>
+  <p class="tag-cloud">
+    <% it.stats.topTags.forEach(function(t) { %>
+      <a class="chip" href="/tag/<%= t.slug %>"><%= t.name %> (<%= t.count %>)</a>
+    <% }) %>
+  </p>
+</section>
+
+<section class="columns">
+  <div>
+    <h2>Most viewed on X</h2>
+    <ol><% it.stats.mostViewedX.forEach(function(p) { %>
+      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+    <% }) %></ol>
+  </div>
+  <div>
+    <h2>Most viewed on this site</h2>
+    <ol><% it.stats.mostViewedBlog.forEach(function(p) { %>
+      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+    <% }) %></ol>
+  </div>
+  <div>
+    <h2>X growth, last 30 days</h2>
+    <ol><% it.stats.topGrowthX30d.forEach(function(p) { %>
+      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted">+<%= it.formatNumber(p.views) %></span></li>
+    <% }) %></ol>
+  </div>
+  <div>
+    <h2>Blog traffic, last 30 days</h2>
+    <ol><% it.stats.topGrowthBlog30d.forEach(function(p) { %>
+      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+    <% }) %></ol>
+  </div>
+</section>
+
+<section>
+  <h2>Most used words</h2>
+  <p class="word-cloud">
+    <% it.stats.topWords.forEach(function(w) { %>
+      <span class="word" style="font-size: <%= Math.min(2, 0.8 + w.count / (it.stats.topWords[0].count || 1)) %>em"><%= w.word %></span>
+    <% }) %>
+  </p>
+</section>
+
+<section>
+  <h2>Post history</h2>
+  <p class="muted">One square per post, colored by topic.</p>
+  <div class="post-squares">
+    <% it.stats.postSquares.forEach(function(sq) { %>
+      <a class="square group-<%= sq.group.toLowerCase().replace(/[^a-z]+/g, '-') %>"
+         href="/<%= sq.slug %>" title="<%= sq.title %> (<%= sq.year %>)"></a>
+    <% }) %>
+  </div>
+</section>

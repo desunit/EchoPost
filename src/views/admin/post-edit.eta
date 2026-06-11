@@ -1,0 +1,115 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1><%= it.post ? "Edit post" : "New post" %></h1>
+
+<form method="post" action="<%= it.post ? '/admin/posts/' + it.post.id : '/admin/posts' %>" class="post-form">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <label>Title
+    <input type="text" name="title" value="<%= it.post ? it.post.title : '' %>" required>
+  </label>
+  <label>Slug
+    <input type="text" name="slug" value="<%= it.post ? it.post.slug : '' %>" placeholder="auto-generated from title">
+  </label>
+
+  <div class="form-row">
+    <label>Type
+      <select name="type">
+        <% it.types.forEach(function(t) { %>
+          <option value="<%= t %>" <%= it.post && it.post.type === t ? 'selected' : '' %>><%= t %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Status
+      <select name="status">
+        <% it.statuses.forEach(function(st) { %>
+          <option value="<%= st %>" <%= it.post && it.post.status === st ? 'selected' : '' %>><%= st %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>Published at
+      <input type="text" name="published_at" value="<%= it.post ? (it.post.published_at || '') : '' %>" placeholder="2026-06-11T12:00:00Z">
+    </label>
+  </div>
+
+  <label>Excerpt
+    <textarea name="excerpt" rows="2"><%= it.post ? (it.post.excerpt || '') : '' %></textarea>
+  </label>
+  <label>Body (Markdown)
+    <textarea name="markdown_body" rows="18"><%= it.post ? (it.post.markdown_body || '') : '' %></textarea>
+  </label>
+  <label>Tags (comma separated)
+    <input type="text" name="tags" value="<%= it.postTags.map(function(t) { return t.name }).join(', ') %>">
+  </label>
+
+  <div class="form-row">
+    <label>Source URL <input type="text" name="source_url" value="<%= it.post ? (it.post.source_url || '') : '' %>"></label>
+    <label>Canonical URL <input type="text" name="canonical_url" value="<%= it.post ? (it.post.canonical_url || '') : '' %>"></label>
+    <label>External URL <input type="text" name="external_url" value="<%= it.post ? (it.post.external_url || '') : '' %>"></label>
+  </div>
+  <div class="form-row">
+    <label>SEO title <input type="text" name="seo_title" value="<%= it.post ? (it.post.seo_title || '') : '' %>"></label>
+    <label>SEO description <input type="text" name="seo_description" value="<%= it.post ? (it.post.seo_description || '') : '' %>"></label>
+  </div>
+
+  <div class="form-row checkboxes">
+    <label><input type="checkbox" name="pinned" <%= it.post && it.post.pinned ? 'checked' : '' %>> Pinned</label>
+    <label><input type="checkbox" name="featured" <%= it.post && it.post.featured ? 'checked' : '' %>> Featured</label>
+    <label><input type="checkbox" name="preserve_manual_title" <%= it.post && it.post.preserve_manual_title ? 'checked' : '' %>> Preserve title on sync</label>
+    <label><input type="checkbox" name="preserve_manual_body" <%= it.post && it.post.preserve_manual_body ? 'checked' : '' %>> Preserve body on sync</label>
+  </div>
+
+  <button type="submit">Save</button>
+</form>
+
+<% if (it.post) { %>
+<section class="post-side">
+  <h2>Tools</h2>
+  <div class="actions">
+    <form method="post" action="/admin/posts/<%= it.post.id %>/recalculate-related" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit">Recalculate related</button>
+    </form>
+    <% if (it.post.x_post_id) { %>
+    <form method="post" action="/admin/posts/<%= it.post.id %>/resync-x" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit">Resync X metrics</button>
+    </form>
+    <form method="post" action="/admin/posts/<%= it.post.id %>/redownload-media" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit">Re-download media</button>
+    </form>
+    <% } %>
+    <form method="post" action="/admin/posts/<%= it.post.id %>/delete" class="inline"
+      onsubmit="return confirm('Archive this post?')">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit" class="danger">Delete</button>
+    </form>
+  </div>
+
+  <% if (it.media.length > 0) { %>
+  <h2>Media</h2>
+  <div class="media-grid">
+    <% it.media.forEach(function(m) { %>
+      <figure>
+        <% if (m.mime_type && m.mime_type.indexOf('image/') === 0) { %>
+          <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy">
+        <% } else { %>
+          <span class="muted"><%= m.mime_type %></span>
+        <% } %>
+      </figure>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <% if (it.related.length > 0) { %>
+  <h2>Related posts</h2>
+  <ul>
+    <% it.related.forEach(function(r) { %>
+      <li><a href="/admin/posts/<%= r.id %>"><%= r.title %></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+<% } %>

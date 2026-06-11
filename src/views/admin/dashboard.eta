@@ -1,0 +1,41 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Dashboard</h1>
+
+<section class="stat-grid">
+  <div class="stat"><strong><%= it.pendingReview %></strong><span>pending review</span></div>
+  <div class="stat"><strong><%= it.importedToday %></strong><span>imported today</span></div>
+  <div class="stat"><strong><%= it.viewsToday %></strong><span>blog views today</span></div>
+  <div class="stat"><strong><%= it.newSubscribers %></strong><span>new subscribers today</span></div>
+  <div class="stat"><strong><%= it.subscriberCounts.active || 0 %></strong><span>active subscribers</span></div>
+  <div class="stat"><strong><%= it.jobCounts.dead || 0 %></strong><span>failed jobs</span></div>
+  <div class="stat"><strong><%= (it.storage.bytes / 1048576).toFixed(1) %> MB</strong><span>media storage</span></div>
+</section>
+
+<section class="columns">
+  <div>
+    <h2>X sync</h2>
+    <p>Status: <strong><%= it.account.connection_status %></strong>
+      <% if (it.account.username) { %> (@<%= it.account.username %>)<% } %></p>
+    <p class="muted">Last sync: <%= it.account.last_sync_at || "never" %><br>
+      Last metrics refresh: <%= it.account.last_metrics_refresh_at || "never" %></p>
+    <% if (it.account.last_error) { %><p class="error">Last error: <%= it.account.last_error %></p><% } %>
+  </div>
+  <div>
+    <h2>Posts by status</h2>
+    <ul>
+      <% Object.keys(it.statusCounts).forEach(function(k) { %>
+        <li><%= k %>: <%= it.statusCounts[k] %></li>
+      <% }) %>
+    </ul>
+  </div>
+  <div>
+    <h2>Top posts this week (blog)</h2>
+    <ol>
+      <% it.topBlogPosts.forEach(function(p) { %>
+        <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= p.views %></span></li>
+      <% }) %>
+    </ol>
+  </div>
+</section>

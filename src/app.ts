@@ -1,0 +1,186 @@
+import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
+import fastifyCookie from "@fastify/cookie";
+import fastifyFormbody from "@fastify/formbody";
+import fastifyStatic from "@fastify/static";
+import { Eta } from "eta";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { config } from "./config/index.js";
+import { getDb, type DB } from "./db/index.js";
+import { runMigrations } from "./db/migrate.js";
+import { PostsService } from "./modules/posts/service.js";
+import { TagsService } from "./modules/tags/service.js";
+import { MediaService } from "./modules/media/service.js";
+import { SettingsService } from "./modules/settings/service.js";
+import { RelatedPostsService } from "./modules/related-posts/service.js";
+import { SearchService } from "./modules/search/service.js";
+import { AnalyticsService } from "./modules/analytics/service.js";
+import { NewsletterService } from "./modules/newsletter/service.js";
+import { RssService } from "./modules/rss/service.js";
+import { SeoService } from "./modules/seo/service.js";
+import { StatsService } from "./modules/stats/service.js";
+import { ArchiveQaService } from "./modules/ama/service.js";
+import { AuthService } from "./modules/auth/service.js";
+import { JobWorker } from "./modules/jobs/worker.js";
+import { XAccountService } from "./modules/x/account.js";
+import { registerPublicRoutes } from "./routes/public.js";
+import { registerAdminRoutes } from "./routes/admin.js";
+import { registerHealthRoutes } from "./routes/health.js";
+import { formatDate, formatDateShort, formatNumber } from "./lib/time.js";
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
+export interface Services {
+  db: DB;
+  posts: PostsService;
+  tags: TagsService;
+  media: MediaService;
+  settings: SettingsService;
+  related: RelatedPostsService;
+  search: SearchService;
+  analytics: AnalyticsService;
+  newsletter: NewsletterService;
+  rss: RssService;
+  seo: SeoService;
+  stats: StatsService;
+  ama: ArchiveQaService;
+  auth: AuthService;
+  worker: JobWorker;
+  xAccount: XAccountService;
+}
+
+declare module "fastify" {
+  interface FastifyInstance {
+    services: Services;
+    view(reply: FastifyReply, template: string, data?: Record<string, unknown>): FastifyReply;
+  }
+}
+
+export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<FastifyInstance> {
+  const app = Fastify({
+    logger: {
+      level: config.isProduction ? "info" : "debug",
+      transport: config.isProduction ? undefined : { target: "pino-pretty" },
+    },
+    trustProxy: true,
+    disableRequestLogging: config.isProduction,
+  });
+
+  const db = getDb();
+  runMigrations(db);
+
+  const auth = new AuthService(db);
+  if (!auth.hasAdminPassword() && config.adminPassword) {
+    auth.setAdminPassword(config.adminPassword);
+    app.log.info("admin password initialized from ADMIN_PASSWORD");
+  }
+
+  const worker = new JobWorker(db, app.log as any);
+  const services: Services = {
+    db,
+    posts: new PostsService(db),
+    tags: new TagsService(db),
+    media: new MediaService(db),
+    settings: new SettingsService(db),
+    related: new RelatedPostsService(db),
+    search: new SearchService(db),
+    analytics: new AnalyticsService(db),
+    newsletter: new NewsletterService(db, app.log as any),
+    rss: new RssService(db),
+    seo: new SeoService(db),
+    stats: new StatsService(db),
+    ama: new ArchiveQaService(db),
+    auth,
+    worker,
+    xAccount: new XAccountService(db),
+  };
+  app.decorate("services", services);
+
+  await app.register(fastifyCookie, { secret: config.sessionSecret });
+  await app.register(fastifyFormbody);
+  await app.register(fastifyStatic, {
+    root: path.join(rootDir, "public"),
+    prefix: "/assets/",
+  });
+  if (config.media.driver === "local") {
+    await app.register(fastifyStatic, {
+      root: config.media.storagePath,
+      prefix: `${config.media.publicUrl}/`,
+      decorateReply: false,
+      maxAge: "30d",
+    });
+  }
+
+  /* ---------- templating ---------- */
+  const eta = new Eta({
+    views: path.join(rootDir, "views"),
+    cache: config.isProduction,
+    autoEscape: true,
+  });
+  const siteSettings = () => services.settings.getSiteSettings();
+  app.decorate("view", function (reply: FastifyReply, template: string, data: Record<string, unknown> = {}) {
+    const html = eta.render(template, {
+      site: {
+        url: config.siteUrl,
+        title: config.siteTitle,
+        description: config.siteDescription,
+        ...siteSettings(),
+      },
+      formatDate,
+      formatDateShort,
+      formatNumber,
+      ...data,
+    });
+    return reply.type("text/html; charset=utf-8").send(html);
+  });
+
+  /* ---------- security headers + redirects ---------- */
+  app.addHook("onRequest", async (req, reply) => {
+    reply.header("X-Content-Type-Options", "nosniff");
+    reply.header("X-Frame-Options", "SAMEORIGIN");
+    reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+    reply.header(
+      "Content-Security-Policy",
+      "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'",
+    );
+
+    // slug redirects (PRD 5.13.2) — only for plain GET page requests
+    if (req.method === "GET" && !req.url.startsWith("/admin") && !req.url.startsWith("/assets")) {
+      const pathOnly = req.url.split("?")[0]!;
+      const redirect = services.seo.findRedirect(pathOnly);
+      if (redirect) {
+        return reply.code(redirect.status_code).redirect(redirect.to_path);
+      }
+    }
+  });
+
+  registerPublicRoutes(app);
+  registerAdminRoutes(app);
+  registerHealthRoutes(app);
+
+  app.setNotFoundHandler((req, reply) => {
+    reply.code(404);
+    return app.view(reply, "message", {
+      title: "Not found",
+      heading: "404 — Page not found",
+      message: "That page doesn't exist. It may have moved.",
+    });
+  });
+
+  app.setErrorHandler((err: any, req, reply) => {
+    req.log.error({ err }, "request failed");
+    reply.code(err?.statusCode ?? 500);
+    return app.view(reply, "message", {
+      title: "Error",
+      heading: "Something went wrong",
+      message: config.isProduction ? "Please try again later." : String(err?.message ?? err),
+    });
+  });
+
+  if (opts.startWorker !== false) {
+    worker.start();
+    app.addHook("onClose", async () => worker.stop());
+  }
+
+  return app;
+}

@@ -1,0 +1,47 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Tags</h1>
+
+<form method="post" action="/admin/tags" class="inline-form">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <input type="text" name="name" placeholder="New tag name" required>
+  <button type="submit">Create</button>
+</form>
+
+<table class="admin-table">
+  <thead><tr><th>Tag</th><th>Posts</th><th>Group</th><th>Rename / group / alias</th><th>Merge into</th><th></th></tr></thead>
+  <tbody>
+  <% it.tags.forEach(function(t) { %>
+    <tr>
+      <td><a href="/tag/<%= t.slug %>"><%= t.name %></a></td>
+      <td><%= t.post_count %></td>
+      <td class="muted"><%= t.category_group || '—' %></td>
+      <td>
+        <form method="post" action="/admin/tags/<%= t.id %>" class="inline">
+          <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+          <input type="text" name="name" value="<%= t.name %>" size="14">
+          <input type="text" name="category_group" value="<%= t.category_group || '' %>" placeholder="group" size="12">
+          <input type="text" name="alias" placeholder="add alias" size="10">
+          <button type="submit">Save</button>
+        </form>
+      </td>
+      <td>
+        <form method="post" action="/admin/tags/<%= t.id %>/merge" class="inline">
+          <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+          <input type="text" name="target" placeholder="target slug" size="12">
+          <button type="submit">Merge</button>
+        </form>
+      </td>
+      <td>
+        <% if (t.post_count === 0) { %>
+        <form method="post" action="/admin/tags/<%= t.id %>/delete" class="inline">
+          <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+          <button type="submit" class="danger">Delete</button>
+        </form>
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>

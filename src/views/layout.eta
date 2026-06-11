@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= it.title %></title>
+  <% if (it.canonicalUrl) { %><link rel="canonical" href="<%= it.canonicalUrl %>"><% } %>
+  <meta name="description" content="<%= it.metaDescription || it.site.description %>">
+  <meta property="og:title" content="<%= it.title %>">
+  <meta property="og:description" content="<%= it.metaDescription || it.site.description %>">
+  <meta property="og:type" content="<%= it.ogType || 'website' %>">
+  <% if (it.canonicalUrl) { %><meta property="og:url" content="<%= it.canonicalUrl %>"><% } %>
+  <% if (it.ogImage) { %><meta property="og:image" content="<%= it.ogImage %>"><% } %>
+  <meta name="twitter:card" content="<%= it.ogImage ? 'summary_large_image' : 'summary' %>">
+  <link rel="alternate" type="application/rss+xml" title="<%= it.site.title %>" href="/rss">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/theme.js"></script>
+  <meta name="theme-color" content="#fcfbf7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
+  <% if (it.jsonLd) { %><script type="application/ld+json"><%~ it.jsonLd %></script><% } %>
+</head>
+<body>
+<header class="site-header">
+  <nav>
+    <a href="/" class="site-name"><%= it.site.title %></a>
+    <span class="nav-links">
+      <a href="/tags">Tags</a>
+      <a href="/stats">Stats</a>
+      <a href="/search">Search</a>
+      <a href="/rss">RSS</a>
+      <% if (it.site.amaEnabled) { %><a href="/ama">Ask</a><% } %>
+      <% if (it.admin) { %><a href="/admin">Admin</a><% } %>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light/dark theme" title="Toggle theme">◐</button>
+    </span>
+  </nav>
+</header>
+<main>
+<%~ it.body %>
+</main>
+<footer class="site-footer">
+  <% if (it.site.customFooterHtml) { %><div><%~ it.site.customFooterHtml %></div><% } %>
+  <p>
+    <a href="/">Archive</a> · <a href="/tags">Tags</a> · <a href="/stats">Stats</a> · <a href="/rss">RSS</a>
+    <% if (it.site.authorXUrl) { %> · <a href="<%= it.site.authorXUrl %>" rel="noopener">X</a><% } %>
+  </p>
+  <% if (it.totals) { %>
+  <p class="muted">Total archive views: <%= it.formatNumber(it.totals.x + it.totals.blog) %>
+    (<%= it.formatNumber(it.totals.x) %> on X · <%= it.formatNumber(it.totals.blog) %> on this site)</p>
+  <% } %>
+</footer>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<% layout("layout") %>
+
+<h1>Ask my archive</h1>
+<p class="muted">Ask a question; the answer is drawn only from published posts.</p>
+
+<form method="post" action="/ama" class="ama-form">
+  <textarea name="question" rows="3" maxlength="500" placeholder="What do you think about…" required><%= it.question %></textarea>
+  <button type="submit">Ask</button>
+</form>
+
+<% if (it.answer) { %>
+<section class="ama-answer">
+  <h2>Answer</h2>
+  <p><%= it.answer %></p>
+  <% if (it.sources.length > 0) { %>
+  <h3>Sources</h3>
+  <ul>
+    <% it.sources.forEach(function(src) { %>
+      <li><a href="<%= src.url %>"><%= src.title %></a></li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+<% } %>

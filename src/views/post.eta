@@ -1,0 +1,86 @@
+<% layout("layout") %>
+
+<article class="post">
+  <p><a href="/">&larr; Back to archive</a></p>
+  <h1><%= it.post.title %></h1>
+
+  <p class="post-meta">
+    <%= it.formatDate(it.post.published_at) %>
+    <% if (it.metrics) { %>
+      <% if (it.post.source_url) { %>
+        · <a href="<%= it.post.source_url %>" rel="noopener"><%= it.formatNumber(it.metrics.impressionCount) %> views</a>
+        · <a href="<%= it.post.source_url %>" rel="noopener"><%= it.formatNumber(it.metrics.likeCount) %> likes</a>
+        · <a href="<%= it.post.source_url %>" rel="noopener"><%= it.formatNumber(it.metrics.repostCount) %> reposts</a>
+      <% } else { %>
+        · <%= it.formatNumber(it.metrics.impressionCount) %> views
+        · <%= it.formatNumber(it.metrics.likeCount) %> likes
+      <% } %>
+    <% } %>
+    <% if (it.site.showBlogViewCounts && it.blogViews > 0) { %>
+      · <%= it.formatNumber(it.blogViews) %> blog views
+    <% } %>
+  </p>
+
+  <% if (it.tags.length > 0) { %>
+  <p class="post-tags">
+    <% it.tags.forEach(function(t) { %><a class="chip" href="/tag/<%= t.slug %>"><%= t.name %></a> <% }) %>
+  </p>
+  <% } %>
+
+  <div class="post-body">
+    <%~ it.bodyHtml %>
+  </div>
+
+  <% var inlineImages = (it.bodyHtml || ""); %>
+  <% it.media.forEach(function(m) { %>
+    <% if (m.mime_type && m.mime_type.indexOf("image/") === 0 && inlineImages.indexOf(m.public_url) === -1) { %>
+      <figure class="post-media">
+        <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy"
+          <% if (m.width) { %>width="<%= m.width %>"<% } %> <% if (m.height) { %>height="<%= m.height %>"<% } %>>
+      </figure>
+    <% } %>
+  <% }) %>
+
+  <% if (it.post.x_post_id && it.post.source_url) { %>
+  <p class="source-attribution">
+    <a href="<%= it.post.source_url %>" rel="noopener">Originally posted on X</a>
+    <% if (it.post.x_source_unavailable) { %><span class="muted">(original no longer available)</span><% } %>
+  </p>
+  <% } %>
+
+  <div class="author-cta"><%~ it.site.authorCtaHtml %></div>
+
+  <%~ include("partials/newsletter", { ...it, source: "post" }) %>
+
+  <% if (it.related.length > 0) { %>
+  <section class="related">
+    <h2>Related posts</h2>
+    <ul>
+      <% it.related.forEach(function(r) { %>
+        <li><a href="/<%= r.slug %>"><%= r.title %></a> <span class="muted"><%= it.formatDate(r.published_at) %></span></li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
+
+  <nav class="prev-next">
+    <% if (it.prev) { %><span>&larr; <a href="/<%= it.prev.slug %>"><%= it.prev.title %></a></span><% } %>
+    <% if (it.next) { %><span><a href="/<%= it.next.slug %>"><%= it.next.title %></a> &rarr;</span><% } %>
+  </nav>
+
+  <% if (it.site.showArchiveOnPostPages) { %>
+  <section class="archive post-page-archive">
+    <h2>Archive</h2>
+    <% it.archiveGroups.forEach(function(g) { %>
+      <h3 class="year"><%= g.year || "Undated" %></h3>
+      <ul class="archive-list">
+        <% g.posts.forEach(function(p) { %>
+          <%~ include("partials/archive-item", { ...it, post: p }) %>
+        <% }) %>
+      </ul>
+    <% }) %>
+  </section>
+  <% } %>
+</article>
+
+<% if (it.hasXWidget) { %><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script><% } %>

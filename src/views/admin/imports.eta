@@ -1,0 +1,85 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Review queue</h1>
+
+<section class="x-connect">
+  <% if (it.account.connection_status === 'connected') { %>
+    <p>Connected as <strong>@<%= it.account.username %></strong>
+      · Last sync: <%= it.account.last_sync_at || "never" %></p>
+  <% } else { %>
+    <p class="warn">No X account connected.</p>
+  <% } %>
+  <div class="actions">
+    <form method="post" action="/admin/x/connect" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <input type="text" name="username" placeholder="X username" value="<%= it.account.username || '' %>">
+      <button type="submit">Connect</button>
+    </form>
+    <form method="post" action="/admin/imports/sync" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit">Sync now</button>
+    </form>
+    <% if (it.account.connection_status === 'connected') { %>
+      <form method="post" action="/admin/imports/backfill" class="inline">
+        <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+        <button type="submit" <%= it.account.backfill_complete ? "disabled" : "" %>>
+          Sync <%= it.backfillBatchSize %> older posts
+        </button>
+      </form>
+    <% } %>
+  </div>
+  <% if (it.account.connection_status === 'connected') { %>
+    <p class="muted">
+      <% if (it.account.backfill_complete) { %>
+        Backfill complete — the full archive has been imported.
+      <% } else if (it.account.backfill_oldest_at) { %>
+        Backfill reached posts from <%= it.formatDate(it.account.backfill_oldest_at) %>; the next batch fetches older posts.
+      <% } else { %>
+        Backfill not started — fetches the 100 oldest-known posts and walks backwards from there.
+      <% } %>
+    </p>
+  <% } %>
+  <% if (it.account.last_error) { %><p class="error"><%= it.account.last_error %></p><% } %>
+</section>
+
+<% if (it.pending.length === 0) { %>
+  <p class="muted">Nothing waiting for review.</p>
+<% } %>
+
+<% it.pending.forEach(function(p) { %>
+<article class="import-card">
+  <h2><%= p.title %></h2>
+  <p class="muted">
+    <%= it.formatDate(p.imported_at) %> · proposed slug: <code><%= p.slug %></code>
+    <% if (p.tag_names) { %> · tags: <%= p.tag_names %><% } %>
+  </p>
+  <% if (p.metrics) { %>
+  <p class="muted"><%= it.formatNumber(p.metrics.impressionCount) %> views ·
+    <%= it.formatNumber(p.metrics.likeCount) %> likes ·
+    <%= it.formatNumber(p.metrics.repostCount) %> reposts</p>
+  <% } %>
+  <blockquote><%= (p.markdown_body || '').slice(0, 500) %></blockquote>
+  <% if (p.media.length > 0) { %>
+  <div class="media-grid">
+    <% p.media.forEach(function(m) { %>
+      <% if (m.mime_type && m.mime_type.indexOf('image/') === 0) { %>
+        <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy">
+      <% } %>
+    <% }) %>
+  </div>
+  <% } %>
+  <div class="actions">
+    <form method="post" action="/admin/imports/<%= p.id %>/approve" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit">Publish</button>
+    </form>
+    <a href="/admin/posts/<%= p.id %>" class="button">Edit</a>
+    <form method="post" action="/admin/imports/<%= p.id %>/ignore" class="inline">
+      <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+      <button type="submit" class="danger">Ignore</button>
+    </form>
+    <% if (p.source_url) { %><a href="<%= p.source_url %>" rel="noopener" class="muted">View on X</a><% } %>
+  </div>
+</article>
+<% }) %>

@@ -1,0 +1,70 @@
+<% layout("layout") %>
+
+<section class="masthead">
+  <h1><%= it.site.title %></h1>
+  <p><%= it.site.description %></p>
+  <span class="count-line"><%= it.count %> posts in the archive<% if (it.grouped && it.groups.length > 0) { %> · since <%= it.groups[it.groups.length - 1].year %><% } %></span>
+</section>
+
+<section class="controls">
+  <form method="get" action="/" class="filters">
+    <div class="control-group">
+      <label>Sort</label>
+      <% it.sortModes.forEach(function(m) { %>
+        <button type="submit" name="sort" value="<%= m.key %>"
+          class="chip <%= it.sort === m.key ? 'active' : '' %>"><%= m.label %></button>
+      <% }) %>
+      <input type="hidden" name="filter" value="<%= it.filter %>">
+    </div>
+  </form>
+  <form method="get" action="/" class="filters">
+    <div class="control-group">
+      <label>Show</label>
+      <% it.filterModes.forEach(function(m) { %>
+        <button type="submit" name="filter" value="<%= m.key %>"
+          class="chip <%= it.filter === m.key ? 'active' : '' %>"><%= m.label %></button>
+      <% }) %>
+      <input type="hidden" name="sort" value="<%= it.sort %>">
+    </div>
+  </form>
+</section>
+
+<% if (it.pinned.length > 0) { %>
+<section class="pinned">
+  <h2>Pinned</h2>
+  <ul class="archive-list">
+    <% it.pinned.forEach(function(p) { %>
+      <%~ include("partials/archive-item", { ...it, post: p }) %>
+    <% }) %>
+  </ul>
+</section>
+<% } %>
+
+<%~ include("partials/newsletter", { ...it, source: "homepage" }) %>
+
+<section class="archive">
+  <% if (it.grouped) { %>
+    <% it.groups.forEach(function(g) { %>
+      <h2 class="year"><%= g.year || "Undated" %></h2>
+      <ul class="archive-list">
+        <% g.posts.forEach(function(p) { %>
+          <%~ include("partials/archive-item", { ...it, post: p }) %>
+        <% }) %>
+      </ul>
+    <% }) %>
+  <% } else { %>
+    <ul class="archive-list">
+      <% it.groups[0].posts.forEach(function(p) { %>
+        <li class="archive-item">
+          <span class="item-date"><%= it.formatDateShort(p.published_at) %>
+            <% if (it.sort.startsWith('x_views')) { %> · <%= it.formatNumber(p.x_views) %> on X<% } %>
+            <% if (it.sort.startsWith('blog_views')) { %> · <%= it.formatNumber(p.blog_views) %> here<% } %>
+          </span>
+          <span class="item-main">
+            <a class="item-title" href="/<%= p.slug %>"><%= p.title %></a><% if (p.x_post_id) { %><span class="badge badge-x">𝕏</span><% } %>
+          </span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

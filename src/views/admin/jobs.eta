@@ -1,0 +1,43 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Jobs</h1>
+
+<p class="muted">
+  <% Object.keys(it.counts).forEach(function(k) { %><%= k %>: <%= it.counts[k] %> · <% }) %>
+</p>
+
+<form method="post" action="/admin/jobs/enqueue" class="inline-form">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+  <select name="type">
+    <option value="x_import">Import X posts</option>
+    <option value="x_metrics_refresh">Refresh X metrics</option>
+    <option value="recalculate_related">Recalculate related posts</option>
+    <option value="backup_database">Backup database</option>
+    <option value="verify_media">Verify media</option>
+  </select>
+  <button type="submit">Run now</button>
+</form>
+
+<table class="admin-table">
+  <thead><tr><th>Type</th><th>Status</th><th>Attempts</th><th>Run after</th><th>Last error</th><th></th></tr></thead>
+  <tbody>
+  <% it.jobs.forEach(function(j) { %>
+    <tr>
+      <td><%= j.type %></td>
+      <td><%= j.status %></td>
+      <td><%= j.attempts %>/<%= j.max_attempts %></td>
+      <td class="muted"><%= j.run_after.slice(0, 19) %></td>
+      <td class="muted error-cell"><%= (j.last_error || '').slice(0, 120) %></td>
+      <td>
+        <% if (j.status === 'dead' || j.status === 'failed' || j.status === 'pending') { %>
+        <form method="post" action="/admin/jobs/<%= j.id %>/retry" class="inline">
+          <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+          <button type="submit">Retry</button>
+        </form>
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>

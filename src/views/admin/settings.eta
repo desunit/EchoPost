@@ -1,0 +1,61 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Settings</h1>
+
+<form method="post" action="/admin/settings" class="post-form">
+  <input type="hidden" name="_csrf" value="<%= it.csrf %>">
+
+  <h2>Author</h2>
+  <label>Author name <input type="text" name="author_name" value="<%= it.siteSettings.authorName %>"></label>
+  <label>Author X profile URL <input type="text" name="author_x_url" value="<%= it.siteSettings.authorXUrl %>"></label>
+  <label>Author CTA (HTML, shown under every post)
+    <textarea name="author_cta_html" rows="3"><%= it.siteSettings.authorCtaHtml %></textarea>
+  </label>
+  <label>Custom footer HTML
+    <textarea name="custom_footer_html" rows="2"><%= it.siteSettings.customFooterHtml %></textarea>
+  </label>
+
+  <h2>Display</h2>
+  <div class="form-row checkboxes">
+    <label><input type="checkbox" name="show_blog_view_counts" <%= it.siteSettings.showBlogViewCounts ? 'checked' : '' %>> Show blog view counts</label>
+    <label><input type="checkbox" name="show_archive_on_post_pages" <%= it.siteSettings.showArchiveOnPostPages ? 'checked' : '' %>> Show full archive on post pages</label>
+    <label><input type="checkbox" name="rss_full_content" <%= it.siteSettings.rssIncludeFullContent ? 'checked' : '' %>> Full content in RSS</label>
+    <label><input type="checkbox" name="ama_enabled" <%= it.siteSettings.amaEnabled ? 'checked' : '' %>> Enable AMA page</label>
+  </div>
+
+  <h2>Tagging</h2>
+  <label>Controlled tag vocabulary (comma separated)
+    <input type="text" name="tag_vocabulary" value="<%= it.siteSettings.controlledTagVocabulary.join(', ') %>">
+  </label>
+  <label>Ignored words on stats page (comma separated)
+    <input type="text" name="stats_ignored_words" value="<%= it.siteSettings.statsIgnoredWords.join(', ') %>">
+  </label>
+
+  <h2>Import rules</h2>
+  <div class="form-row">
+    <label>Minimum characters <input type="number" name="min_chars" value="<%= it.importRules.minimumCharacterCount %>"></label>
+    <label>Min quote commentary chars <input type="number" name="min_quote_chars" value="<%= it.importRules.minimumQuoteCommentaryCount || '' %>"></label>
+    <label>Min X views for auto-publish <input type="number" name="min_x_views" value="<%= it.importRules.minimumXViewsForAutoPublish || '' %>"></label>
+    <label>Min likes for auto-publish <input type="number" name="min_likes" value="<%= it.importRules.minimumLikesForAutoPublish || '' %>"></label>
+  </div>
+  <div class="form-row checkboxes">
+    <label><input type="checkbox" name="import_replies" <%= it.importRules.importReplies ? 'checked' : '' %>> Import replies</label>
+    <label><input type="checkbox" name="import_reposts" <%= it.importRules.importReposts ? 'checked' : '' %>> Import reposts</label>
+    <label><input type="checkbox" name="import_quotes" <%= it.importRules.importQuotes ? 'checked' : '' %>> Import quotes</label>
+    <label><input type="checkbox" name="combine_threads" <%= it.importRules.combineThreads ? 'checked' : '' %>> Combine threads</label>
+    <label><input type="checkbox" name="auto_publish" <%= it.importRules.autoPublishStandalonePosts ? 'checked' : '' %>> Auto-publish standalone posts</label>
+  </div>
+  <div class="form-row">
+    <label>Auto-publish delay (minutes) <input type="number" name="auto_publish_after_minutes" value="<%= it.importRules.autoPublishAfterMinutes %>"></label>
+    <label>Blocked keywords <input type="text" name="blocked_keywords" value="<%= it.importRules.blockedKeywords.join(', ') %>"></label>
+    <label>Allowed languages <input type="text" name="allowed_languages" value="<%= it.importRules.allowedLanguages.join(', ') %>" placeholder="en, de (empty = all)"></label>
+  </div>
+
+  <h2>Security</h2>
+  <label>New admin password (leave blank to keep current)
+    <input type="password" name="new_admin_password" autocomplete="new-password">
+  </label>
+
+  <button type="submit">Save settings</button>
+</form>

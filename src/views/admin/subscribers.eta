@@ -1,0 +1,23 @@
+<% layout("../layout") %>
+<%~ include("../partials/admin-nav", it) %>
+
+<h1>Subscribers</h1>
+
+<p class="muted">
+  <% Object.keys(it.counts).forEach(function(k) { %><%= k %>: <%= it.counts[k] %> · <% }) %>
+</p>
+
+<table class="admin-table">
+  <thead><tr><th>Email</th><th>Status</th><th>Source</th><th>Subscribed</th><th>Confirmed</th></tr></thead>
+  <tbody>
+  <% it.subscribers.forEach(function(sub) { %>
+    <tr>
+      <td><%= sub.email %></td>
+      <td><%= sub.status %></td>
+      <td class="muted"><%= sub.source || '' %></td>
+      <td class="muted"><%= (sub.subscribed_at || '').slice(0, 10) %></td>
+      <td class="muted"><%= (sub.confirmed_at || '').slice(0, 10) %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>

@@ -68,6 +68,12 @@ export class JobWorker {
       await metrics.refresh(payload?.limit ?? 100);
     });
 
+    this.register("x_post_media_refetch", async (payload) => {
+      if (!payload?.postId) return;
+      const summary = await importer.refetchMedia(payload.postId);
+      this.log.info({ postId: payload.postId, ...summary }, "x post media refetched");
+    });
+
     this.register("recalculate_related", async (payload) => {
       if (payload?.postId) related.recalculateForPost(payload.postId);
       else related.recalculateAll();

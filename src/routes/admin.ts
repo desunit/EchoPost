@@ -301,7 +301,11 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
   app.post("/admin/posts/:id/redownload-media", async (req, reply) => {
     const { id } = req.params as { id: string };
-    s.worker.queue.enqueue("verify_media", {}, { dedupe: true });
+    // Re-fetch this post's tweet(s) from X and re-mirror their media (picks up
+    // media changed upstream or never captured). The daily verify_media job, by
+    // contrast, only restores files missing on disk.
+    s.worker.queue.enqueue("x_post_media_refetch", { postId: id });
+    s.auth.audit("post_media_refetch", {}, "post", id);
     return reply.redirect(bp + `/admin/posts/${id}`);
   });
 

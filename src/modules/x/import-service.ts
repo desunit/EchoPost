@@ -112,6 +112,45 @@ export class XImportService {
     return summary;
   }
 
+  /**
+   * Re-fetch an imported post's tweet(s) from X and re-mirror their media.
+   * Unlike the `verify_media` job (which only restores files missing on disk),
+   * this pulls straight from the API, so media that changed upstream — or was
+   * never captured — is picked up. Existing X-sourced media rows are dropped
+   * first so re-runs don't duplicate; admin uploads are left untouched. Body
+   * text isn't touched (image URLs are content-addressed, so they stay valid).
+   */
+  async refetchMedia(postId: string): Promise<{ tweets: number; mirrored: number }> {
+    const post = this.posts.getById(postId);
+    if (!post) throw new Error(`Post not found: ${postId}`);
+    if (!post.x_post_id) throw new Error("Post is not an imported X post");
+
+    // Root tweet plus any thread continuations appended to it.
+    const ids = [...new Set([post.x_post_id, ...this.threadIds(post)])];
+    const { tweets, media } = await this.client.getTweets(ids);
+    // Fetch before deleting: if X returns nothing (e.g. all deleted), keep what we have.
+    if (tweets.length === 0) throw new Error("X returned no tweets for this post (deleted or inaccessible)");
+
+    // Drop existing X-sourced media (keep admin uploads), then re-mirror fresh.
+    for (const m of this.media.forPost(postId)) {
+      if (m.source_type !== "upload") this.media.removeUpload(m.id);
+    }
+
+    const byId = new Map(tweets.map((t) => [t.id, t]));
+    let order = this.media.forPost(postId).length; // continue after any kept uploads
+    let mirrored = 0;
+    for (const id of ids) {
+      const tweet = byId.get(id);
+      if (!tweet) continue;
+      const rows = await this.mirrorTweetMedia(postId, tweet, media, order);
+      order += rows.length;
+      mirrored += rows.length;
+    }
+
+    invalidateContentCaches();
+    return { tweets: tweets.length, mirrored };
+  }
+
   /** Process a fetched timeline page oldest-first so thread roots precede continuations. */
   private async processTimeline(
     tweets: XTweet[],

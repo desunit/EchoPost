@@ -78,7 +78,7 @@
     </form>
     <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/redownload-media" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
-      <button type="submit">Re-download media</button>
+      <button type="submit">Refetch media from X</button>
     </form>
     <% } %>
     <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/delete" class="inline"

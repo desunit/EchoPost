@@ -2,7 +2,7 @@
 
 <h1><%= it.tag.name %></h1>
 <% if (it.tag.description) { %><p><%= it.tag.description %></p><% } %>
-<p class="muted"><%= it.posts.length %> posts · <a href="/tag/<%= it.tag.slug %>/rss">RSS</a></p>
+<p class="muted"><%= it.posts.length %> posts · <a href="<%= it.base %>/tag/<%= it.tag.slug %>/rss">RSS</a></p>
 
 <% it.groups.forEach(function(g) { %>
   <h2 class="year"><%= g.year || "Undated" %></h2>
@@ -11,7 +11,7 @@
       <li class="archive-item">
         <span class="item-date"><%= it.formatDateShort(p.published_at) %></span>
         <span class="item-main">
-          <a class="item-title" href="/<%= p.slug %>"><%= p.title %></a><% if (p.type !== 'blog') { %><span class="badge badge-type"><%= p.type.replace('_', ' ') %></span><% } %>
+          <a class="item-title" href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a><% if (p.type !== 'blog') { %><span class="badge badge-type"><%= p.type.replace('_', ' ') %></span><% } %>
         </span>
       </li>
     <% }) %>

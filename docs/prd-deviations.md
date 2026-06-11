@@ -25,6 +25,20 @@ Deliberate deviations from the PRD, chosen to keep the build dependency-light an
 - **`autoPublishAfterMinutes`** is stored and editable but not yet acted
   on by a delayed job; auto-publish currently happens at import time when
   thresholds are met.
+- **Base path / subdirectory mount (`BASE_PATH`)**: the whole app can be
+  served under a URL prefix (e.g. `BASE_PATH=/blog` → pages at
+  `example.com/blog/...`). Empty (default) = root, so existing deployments are
+  unaffected. Implementation: routes register inside a Fastify `prefix` scope
+  (`src/app.ts`); `config.basePath` is the normalized prefix and
+  `config.publicUrl` (= `siteUrl + basePath`) is the absolute base used for all
+  canonical URLs, feeds, sitemap, robots, JSON-LD, and email links. Templates
+  receive `it.base` and prepend it to every internal page/feed/admin link.
+  **Exceptions kept at root**: static assets (`/assets`), mirrored media
+  (`/media` — its URLs are baked into stored post HTML), and `/health` (infra
+  probe). Slug redirects are stored unprefixed and the base is stripped/re-added
+  at the request hook. A reverse proxy fronting the app must forward `/assets`,
+  `/media`, and `/health` at root in addition to the prefixed paths, and must
+  **not** strip the prefix (the app expects to see it).
 - **Bulk admin actions** (PRD 5.16.3) are available one-post-at-a-time in
   the UI and via jobs (`recalculate_related`, `x_metrics_refresh`,
   `verify_media`); multi-select UI is a follow-up.

@@ -3,7 +3,7 @@
 <h1>Ask my archive</h1>
 <p class="muted">Ask a question; the answer is drawn only from published posts.</p>
 
-<form method="post" action="/ama" class="ama-form">
+<form method="post" action="<%= it.base %>/ama" class="ama-form">
   <textarea name="question" rows="3" maxlength="500" placeholder="What do you think about…" required><%= it.question %></textarea>
   <button type="submit">Ask</button>
 </form>

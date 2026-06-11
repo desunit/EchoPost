@@ -154,7 +154,7 @@ export class ArchiveQaService {
     const context = fragments.map((f) => ({
       postId: f.postId,
       title: f.title,
-      url: `${config.siteUrl}/${f.slug}`,
+      url: `${config.publicUrl}/${f.slug}`,
       text: f.text,
     }));
     const result = await this.provider.answer({ question: trimmed, context });

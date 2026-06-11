@@ -325,7 +325,7 @@ export class PostsService {
   }
 
   publicUrl(post: PostRow): string {
-    return `${config.siteUrl}/${post.slug}`;
+    return `${config.publicUrl}/${post.slug}`;
   }
 
   /* ---------------- admin listings ---------------- */

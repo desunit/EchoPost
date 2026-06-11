@@ -50,7 +50,7 @@ export class RssService {
 
       const items = posts
         .map((p) => {
-          const url = `${config.siteUrl}/${p.slug}`;
+          const url = `${config.publicUrl}/${p.slug}`;
           const media = this.db
             .prepare("SELECT public_url, mime_type FROM media WHERE post_id = ? AND mime_type LIKE 'image/%' ORDER BY sort_order LIMIT 1")
             .get(p.id) as { public_url: string; mime_type: string } | undefined;
@@ -79,10 +79,10 @@ export class RssService {
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>${escapeHtml(feedTitle)}</title>
-    <link>${escapeHtml(config.siteUrl)}</link>
+    <link>${escapeHtml(config.publicUrl)}</link>
     <description>${escapeHtml(config.siteDescription)}</description>
     <language>en</language>
-    <atom:link href="${escapeHtml(config.siteUrl)}/rss" rel="self" type="application/rss+xml"/>
+    <atom:link href="${escapeHtml(config.publicUrl)}/rss" rel="self" type="application/rss+xml"/>
 ${items}
   </channel>
 </rss>

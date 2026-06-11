@@ -11,9 +11,9 @@ export class SeoService {
   sitemap(): string {
     return cache.getOrCompute("sitemap", 10 * 60_000, () => {
       const urls: Array<{ loc: string; lastmod?: string }> = [
-        { loc: `${config.siteUrl}/` },
-        { loc: `${config.siteUrl}/tags` },
-        { loc: `${config.siteUrl}/stats` },
+        { loc: `${config.publicUrl}/` },
+        { loc: `${config.publicUrl}/tags` },
+        { loc: `${config.publicUrl}/stats` },
       ];
 
       const posts = this.db
@@ -22,7 +22,7 @@ export class SeoService {
         )
         .all() as Array<{ slug: string; updated_at: string }>;
       for (const p of posts) {
-        urls.push({ loc: `${config.siteUrl}/${p.slug}`, lastmod: p.updated_at.slice(0, 10) });
+        urls.push({ loc: `${config.publicUrl}/${p.slug}`, lastmod: p.updated_at.slice(0, 10) });
       }
 
       const tags = this.db
@@ -33,7 +33,7 @@ export class SeoService {
         )
         .all() as Array<{ slug: string }>;
       for (const t of tags) {
-        urls.push({ loc: `${config.siteUrl}/tag/${t.slug}` });
+        urls.push({ loc: `${config.publicUrl}/tag/${t.slug}` });
       }
 
       const entries = urls
@@ -51,12 +51,13 @@ ${entries}
   }
 
   robotsTxt(): string {
+    const bp = config.basePath;
     return `User-agent: *
-Disallow: /admin
-Disallow: /subscribe
-Disallow: /unsubscribe
+Disallow: ${bp}/admin
+Disallow: ${bp}/subscribe
+Disallow: ${bp}/unsubscribe
 
-Sitemap: ${config.siteUrl}/sitemap.xml
+Sitemap: ${config.publicUrl}/sitemap.xml
 `;
   }
 
@@ -74,7 +75,7 @@ Sitemap: ${config.siteUrl}/sitemap.xml
       datePublished: post.published_at,
       dateModified: post.updated_at,
       author: { "@type": "Person", name: authorName },
-      mainEntityOfPage: `${config.siteUrl}/${post.slug}`,
+      mainEntityOfPage: `${config.publicUrl}/${post.slug}`,
       description: post.seo_description ?? post.excerpt ?? "",
       wordCount: post.word_count,
     };

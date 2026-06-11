@@ -7,7 +7,7 @@
   <% Object.keys(it.counts).forEach(function(k) { %><%= k %>: <%= it.counts[k] %> · <% }) %>
 </p>
 
-<form method="post" action="/admin/jobs/enqueue" class="inline-form">
+<form method="post" action="<%= it.base %>/admin/jobs/enqueue" class="inline-form">
   <input type="hidden" name="_csrf" value="<%= it.csrf %>">
   <select name="type">
     <option value="x_import">Import X posts</option>
@@ -31,7 +31,7 @@
       <td class="muted error-cell"><%= (j.last_error || '').slice(0, 120) %></td>
       <td>
         <% if (j.status === 'dead' || j.status === 'failed' || j.status === 'pending') { %>
-        <form method="post" action="/admin/jobs/<%= j.id %>/retry" class="inline">
+        <form method="post" action="<%= it.base %>/admin/jobs/<%= j.id %>/retry" class="inline">
           <input type="hidden" name="_csrf" value="<%= it.csrf %>">
           <button type="submit">Retry</button>
         </form>

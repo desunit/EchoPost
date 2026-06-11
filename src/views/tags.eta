@@ -4,6 +4,6 @@
 <p class="muted"><%= it.tags.length %> tags</p>
 <ul class="tag-list">
   <% it.tags.forEach(function(t) { %>
-    <li><a href="/tag/<%= t.slug %>"><%= t.name %></a> <span class="muted">(<%= t.post_count %>)</span></li>
+    <li><a href="<%= it.base %>/tag/<%= t.slug %>"><%= t.name %></a> <span class="muted">(<%= t.post_count %>)</span></li>
   <% }) %>
 </ul>

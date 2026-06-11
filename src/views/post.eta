@@ -1,7 +1,7 @@
 <% layout("layout") %>
 
 <article class="post">
-  <p><a href="/">&larr; Back to archive</a></p>
+  <p><a href="<%= it.base %>/">&larr; Back to archive</a></p>
   <h1><%= it.post.title %></h1>
 
   <p class="post-meta">
@@ -23,7 +23,7 @@
 
   <% if (it.tags.length > 0) { %>
   <p class="post-tags">
-    <% it.tags.forEach(function(t) { %><a class="chip" href="/tag/<%= t.slug %>"><%= t.name %></a> <% }) %>
+    <% it.tags.forEach(function(t) { %><a class="chip" href="<%= it.base %>/tag/<%= t.slug %>"><%= t.name %></a> <% }) %>
   </p>
   <% } %>
 
@@ -57,15 +57,15 @@
     <h2>Related posts</h2>
     <ul>
       <% it.related.forEach(function(r) { %>
-        <li><a href="/<%= r.slug %>"><%= r.title %></a> <span class="muted"><%= it.formatDate(r.published_at) %></span></li>
+        <li><a href="<%= it.base %>/<%= r.slug %>"><%= r.title %></a> <span class="muted"><%= it.formatDate(r.published_at) %></span></li>
       <% }) %>
     </ul>
   </section>
   <% } %>
 
   <nav class="prev-next">
-    <% if (it.prev) { %><span>&larr; <a href="/<%= it.prev.slug %>"><%= it.prev.title %></a></span><% } %>
-    <% if (it.next) { %><span><a href="/<%= it.next.slug %>"><%= it.next.title %></a> &rarr;</span><% } %>
+    <% if (it.prev) { %><span>&larr; <a href="<%= it.base %>/<%= it.prev.slug %>"><%= it.prev.title %></a></span><% } %>
+    <% if (it.next) { %><span><a href="<%= it.base %>/<%= it.next.slug %>"><%= it.next.title %></a> &rarr;</span><% } %>
   </nav>
 
   <% if (it.site.showArchiveOnPostPages) { %>

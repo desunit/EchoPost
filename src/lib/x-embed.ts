@@ -1,4 +1,5 @@
 import { escapeHtml } from "./markdown.js";
+import { config } from "../config/index.js";
 
 /**
  * Render-time embedding of X-post references inside a post body.
@@ -40,7 +41,7 @@ function cardHtml(card: XRefCard): string {
     ? `<img class="x-ref-card__thumb" src="${escapeHtml(card.thumbnailUrl)}" alt="" loading="lazy">`
     : "";
   return (
-    `<a class="x-ref-card" href="/${escapeHtml(card.slug)}">${thumb}` +
+    `<a class="x-ref-card" href="${config.basePath}/${escapeHtml(card.slug)}">${thumb}` +
     `<span class="x-ref-card__body">` +
     `<span class="x-ref-card__title">${escapeHtml(card.title)}</span>` +
     (excerpt ? `<span class="x-ref-card__excerpt">${escapeHtml(excerpt)}</span>` : "") +

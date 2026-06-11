@@ -1,13 +1,13 @@
 <nav class="admin-nav">
-  <a href="/admin">Dashboard</a>
-  <a href="/admin/imports">Review queue</a>
-  <a href="/admin/posts">Posts</a>
-  <a href="/admin/tags">Tags</a>
-  <a href="/admin/subscribers">Subscribers</a>
-  <a href="/admin/analytics">Analytics</a>
-  <a href="/admin/jobs">Jobs</a>
-  <a href="/admin/settings">Settings</a>
-  <form method="post" action="/admin/logout" class="inline">
+  <a href="<%= it.base %>/admin">Dashboard</a>
+  <a href="<%= it.base %>/admin/imports">Review queue</a>
+  <a href="<%= it.base %>/admin/posts">Posts</a>
+  <a href="<%= it.base %>/admin/tags">Tags</a>
+  <a href="<%= it.base %>/admin/subscribers">Subscribers</a>
+  <a href="<%= it.base %>/admin/analytics">Analytics</a>
+  <a href="<%= it.base %>/admin/jobs">Jobs</a>
+  <a href="<%= it.base %>/admin/settings">Settings</a>
+  <form method="post" action="<%= it.base %>/admin/logout" class="inline">
     <button type="submit" class="link-button">Log out</button>
   </form>
 </nav>

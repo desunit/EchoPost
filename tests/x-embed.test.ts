@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { embedXReferences, type XRefCard } from "../src/lib/x-embed.js";
+import { config } from "../src/config/index.js";
 
 const OWN_ID = "25348232";
 const OWN_USER = "desunit";
@@ -27,7 +28,7 @@ describe("embedXReferences", () => {
     const archive = { "999": { slug: "my-post", title: "My Post", excerpt: "A short summary.", thumbnailUrl: "/media/x.jpg" } };
     const { html, hasWidget } = run(`<p>see ${anchor("https://x.com/desunit/status/999", "x.com/desunit…")}</p>`, archive);
     expect(hasWidget).toBe(false);
-    expect(html).toContain('class="x-ref-card" href="/my-post"');
+    expect(html).toContain(`class="x-ref-card" href="${config.basePath}/my-post"`);
     expect(html).toContain("My Post");
     expect(html).toContain("A short summary.");
     expect(html).toContain('src="/media/x.jpg"');

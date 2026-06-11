@@ -27,7 +27,7 @@
     <h2>Top posts (30d)</h2>
     <ol>
       <% it.topPosts.forEach(function(p) { %>
-        <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= p.views %></span></li>
+        <li><a href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= p.views %></span></li>
       <% }) %>
     </ol>
     <h2>Top referrers (30d)</h2>

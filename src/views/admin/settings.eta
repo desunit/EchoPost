@@ -3,7 +3,7 @@
 
 <h1>Settings</h1>
 
-<form method="post" action="/admin/settings" class="post-form">
+<form method="post" action="<%= it.base %>/admin/settings" class="post-form">
   <input type="hidden" name="_csrf" value="<%= it.csrf %>">
 
   <h2>Author</h2>

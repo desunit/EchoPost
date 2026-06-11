@@ -6,7 +6,7 @@
     <p class="warn">No admin password is set. Set <code>ADMIN_PASSWORD</code> in the environment or run <code>npm run create-admin</code>, then restart.</p>
   <% } %>
   <% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
-  <form method="post" action="/admin/login">
+  <form method="post" action="<%= it.base %>/admin/login">
     <input type="password" name="password" placeholder="Password" required autofocus>
     <button type="submit">Sign in</button>
   </form>

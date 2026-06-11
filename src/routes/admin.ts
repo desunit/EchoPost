@@ -12,13 +12,16 @@ function cookieOptions() {
     httpOnly: true,
     secure: config.isProduction,
     sameSite: "strict" as const,
-    path: "/admin",
+    path: `${config.basePath}/admin`,
     maxAge: 7 * 86_400,
   };
 }
 
 export function registerAdminRoutes(app: FastifyInstance): void {
   const s = app.services;
+  const bp = config.basePath;
+  // All /admin URLs carry the base prefix in req.url and in redirects/cookies.
+  const adminBase = `${bp}/admin`;
 
   const session = (req: FastifyRequest) => s.auth.getSession(req.cookies[SESSION_COOKIE]);
 
@@ -28,7 +31,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   // (Fastify trustProxy). Unset allowlist → no restriction.
   app.addHook("preHandler", async (req, reply) => {
     if (config.adminIpAllowlist.length === 0) return;
-    if (!req.url.startsWith("/admin")) return;
+    if (!req.url.startsWith(adminBase)) return;
     if (ipAllowed(req.ip, config.adminIpAllowlist)) return;
     app.log.warn({ ip: req.ip, url: req.url }, "admin access blocked: IP not in allowlist");
     return reply.code(403).type("text/plain").send("Forbidden");
@@ -37,7 +40,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   /* ---------- login / logout (no auth required) ---------- */
 
   app.get("/admin/login", async (req, reply) => {
-    if (session(req)) return reply.redirect("/admin");
+    if (session(req)) return reply.redirect(bp + "/admin");
     return app.view(reply, "admin/login", {
       title: "Admin login",
       error: null,
@@ -57,29 +60,28 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       return app.view(reply, "admin/login", { title: "Admin login", error: "Wrong password.", needsSetup: !s.auth.hasAdminPassword() });
     }
     reply.setCookie(SESSION_COOKIE, token, cookieOptions());
-    return reply.redirect("/admin");
+    return reply.redirect(bp + "/admin");
   });
 
   app.post("/admin/logout", async (req, reply) => {
     s.auth.logout(req.cookies[SESSION_COOKIE]);
-    reply.clearCookie(SESSION_COOKIE, { path: "/admin" });
-    return reply.redirect("/admin/login");
+    reply.clearCookie(SESSION_COOKIE, { path: adminBase });
+    return reply.redirect(bp + "/admin/login");
   });
 
   /* ---------- auth + CSRF guard for everything else under /admin ---------- */
 
   app.addHook("preHandler", async (req, reply) => {
-    if (!req.url.startsWith("/admin")) return;
-    if (req.url === "/admin/login") return;
+    if (!req.url.startsWith(adminBase)) return;
+    if (req.url === `${adminBase}/login`) return;
     const sess = session(req);
     if (!sess) {
-      if (req.url.startsWith("/admin")) return reply.redirect("/admin/login");
-      return;
+      return reply.redirect(`${adminBase}/login`);
     }
     (req as any).adminSession = sess;
     if (req.method !== "GET" && req.method !== "HEAD") {
       const body = (req.body ?? {}) as Record<string, string>;
-      if (req.url !== "/admin/logout" && body._csrf !== sess.csrf_token) {
+      if (req.url !== `${adminBase}/logout` && body._csrf !== sess.csrf_token) {
         reply.code(403);
         throw new Error("Invalid CSRF token");
       }
@@ -179,7 +181,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     s.posts.syncSearchIndex(s.posts.getById(post.id)!);
     if (post.status === "published") s.related.recalculateForPost(post.id);
     s.auth.audit("post_create", { title: post.title }, "post", post.id);
-    return reply.redirect(`/admin/posts/${post.id}`);
+    return reply.redirect(bp + `/admin/posts/${post.id}`);
   });
 
   app.get("/admin/posts/:id", async (req, reply) => {
@@ -212,14 +214,14 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     s.posts.syncSearchIndex(s.posts.getById(id)!);
     if (post.status === "published") s.related.recalculateForPost(id);
     s.auth.audit("post_update", { title: post.title }, "post", id);
-    return reply.redirect(`/admin/posts/${id}`);
+    return reply.redirect(bp + `/admin/posts/${id}`);
   });
 
   app.post("/admin/posts/:id/delete", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.posts.softDelete(id);
     s.auth.audit("post_delete", {}, "post", id);
-    return reply.redirect("/admin/posts");
+    return reply.redirect(bp + "/admin/posts");
   });
 
   for (const [action, status] of [
@@ -231,26 +233,26 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       s.posts.setStatus(id, status);
       if (status === "published") s.related.recalculateForPost(id);
       s.auth.audit(`post_${action}`, {}, "post", id);
-      return reply.redirect((req.headers.referer as string) ?? "/admin/posts");
+      return reply.redirect((req.headers.referer as string) ?? `${adminBase}/posts`);
     });
   }
 
   app.post("/admin/posts/:id/recalculate-related", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.related.recalculateForPost(id);
-    return reply.redirect(`/admin/posts/${id}`);
+    return reply.redirect(bp + `/admin/posts/${id}`);
   });
 
   app.post("/admin/posts/:id/resync-x", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.worker.queue.enqueue("x_metrics_refresh", { limit: 100 }, { dedupe: true });
-    return reply.redirect(`/admin/posts/${id}`);
+    return reply.redirect(bp + `/admin/posts/${id}`);
   });
 
   app.post("/admin/posts/:id/redownload-media", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.worker.queue.enqueue("verify_media", {}, { dedupe: true });
-    return reply.redirect(`/admin/posts/${id}`);
+    return reply.redirect(bp + `/admin/posts/${id}`);
   });
 
   /* ---------- import review queue (PRD 5.16.2) ---------- */
@@ -276,12 +278,12 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
   app.post("/admin/imports/sync", async (req, reply) => {
     s.worker.queue.enqueue("x_import", {}, { dedupe: true });
-    return reply.redirect("/admin/imports");
+    return reply.redirect(bp + "/admin/imports");
   });
 
   app.post("/admin/imports/backfill", async (req, reply) => {
     s.worker.queue.enqueue("x_backfill", { batchSize: config.x.backfillBatchSize }, { dedupe: true });
-    return reply.redirect("/admin/imports");
+    return reply.redirect(bp + "/admin/imports");
   });
 
   app.post("/admin/imports/:id/approve", async (req, reply) => {
@@ -289,14 +291,14 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     s.posts.setStatus(id, "published");
     s.related.recalculateForPost(id);
     s.auth.audit("import_approve", {}, "post", id);
-    return reply.redirect("/admin/imports");
+    return reply.redirect(bp + "/admin/imports");
   });
 
   app.post("/admin/imports/:id/ignore", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.posts.setStatus(id, "hidden");
     s.auth.audit("import_ignore", {}, "post", id);
-    return reply.redirect("/admin/imports");
+    return reply.redirect(bp + "/admin/imports");
   });
 
   /* ---------- X account ---------- */
@@ -304,7 +306,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   app.post("/admin/x/connect", async (req, reply) => {
     const body = req.body as Record<string, string>;
     const username = (body.username ?? config.x.username).replace(/^@/, "").trim();
-    if (!username) return reply.redirect("/admin/imports");
+    if (!username) return reply.redirect(bp + "/admin/imports");
     try {
       const { XClient } = await import("../modules/x/client.js");
       const user = await new XClient().getUserByUsername(username);
@@ -318,7 +320,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     } catch (err: any) {
       s.xAccount.recordError(err.message);
     }
-    return reply.redirect("/admin/imports");
+    return reply.redirect(bp + "/admin/imports");
   });
 
   /* ---------- tags (PRD 5.10.3) ---------- */
@@ -333,7 +335,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   app.post("/admin/tags", async (req, reply) => {
     const body = req.body as Record<string, string>;
     if (body.name?.trim()) s.tags.ensure(body.name);
-    return reply.redirect("/admin/tags");
+    return reply.redirect(bp + "/admin/tags");
   });
 
   app.post("/admin/tags/:id", async (req, reply) => {
@@ -344,7 +346,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       s.db.prepare("UPDATE tags SET category_group = ? WHERE id = ?").run(body.category_group || null, id);
     }
     if (body.alias?.trim()) s.tags.addAlias(id, body.alias);
-    return reply.redirect("/admin/tags");
+    return reply.redirect(bp + "/admin/tags");
   });
 
   app.post("/admin/tags/:id/merge", async (req, reply) => {
@@ -355,13 +357,13 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       s.tags.merge(id, target.id);
       s.auth.audit("tag_merge", { into: target.slug }, "tag", id);
     }
-    return reply.redirect("/admin/tags");
+    return reply.redirect(bp + "/admin/tags");
   });
 
   app.post("/admin/tags/:id/delete", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.tags.delete(id);
-    return reply.redirect("/admin/tags");
+    return reply.redirect(bp + "/admin/tags");
   });
 
   /* ---------- settings (PRD 5.16.4) ---------- */
@@ -416,7 +418,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
     invalidateContentCaches();
     s.auth.audit("settings_update");
-    return reply.redirect("/admin/settings");
+    return reply.redirect(bp + "/admin/settings");
   });
 
   /* ---------- jobs ---------- */
@@ -432,7 +434,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   app.post("/admin/jobs/:id/retry", async (req, reply) => {
     const { id } = req.params as { id: string };
     s.worker.queue.retryNow(id);
-    return reply.redirect("/admin/jobs");
+    return reply.redirect(bp + "/admin/jobs");
   });
 
   app.post("/admin/jobs/enqueue", async (req, reply) => {
@@ -441,7 +443,7 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     if (allowed.includes(body.type ?? "")) {
       s.worker.queue.enqueue(body.type!, {}, { dedupe: true });
     }
-    return reply.redirect("/admin/jobs");
+    return reply.redirect(bp + "/admin/jobs");
   });
 
   /* ---------- subscribers + analytics ---------- */

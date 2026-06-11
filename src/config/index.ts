@@ -19,14 +19,29 @@ function intEnv(key: string, fallback: number): number {
   return Number.isFinite(v) ? v : fallback;
 }
 
+// Normalize an optional URL path prefix: "" / "/" → "", "blog" / "/blog/" → "/blog".
+// When set, the whole app (pages, feeds, admin) is mounted under this path.
+function normalizeBasePath(raw: string): string {
+  const p = raw.trim().replace(/\/+$/, "");
+  if (!p || p === "/") return "";
+  return p.startsWith("/") ? p : `/${p}`;
+}
+
 const root = process.cwd();
+const siteUrl = env("SITE_URL", "http://localhost:3000").replace(/\/$/, "");
+const basePath = normalizeBasePath(env("BASE_PATH"));
 
 export const config = {
   env: env("NODE_ENV", "development"),
   isProduction: env("NODE_ENV") === "production",
   port: intEnv("PORT", 3000),
   host: env("HOST", "0.0.0.0"),
-  siteUrl: env("SITE_URL", "http://localhost:3000").replace(/\/$/, ""),
+  siteUrl,
+  // URL path the app is mounted under (e.g. "/blog"); "" means root.
+  basePath,
+  // Absolute base for all public links: origin + basePath. Use this (not siteUrl)
+  // for canonical URLs, feeds, sitemap, and JSON-LD.
+  publicUrl: siteUrl + basePath,
   siteTitle: env("SITE_TITLE", "EchoPost"),
   siteDescription: env("SITE_DESCRIPTION", "Personal content archive and X mirror"),
 

@@ -11,17 +11,17 @@
     <p class="warn">No X account connected.</p>
   <% } %>
   <div class="actions">
-    <form method="post" action="/admin/x/connect" class="inline">
+    <form method="post" action="<%= it.base %>/admin/x/connect" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <input type="text" name="username" placeholder="X username" value="<%= it.account.username || '' %>">
       <button type="submit">Connect</button>
     </form>
-    <form method="post" action="/admin/imports/sync" class="inline">
+    <form method="post" action="<%= it.base %>/admin/imports/sync" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit">Sync now</button>
     </form>
     <% if (it.account.connection_status === 'connected') { %>
-      <form method="post" action="/admin/imports/backfill" class="inline">
+      <form method="post" action="<%= it.base %>/admin/imports/backfill" class="inline">
         <input type="hidden" name="_csrf" value="<%= it.csrf %>">
         <button type="submit" <%= it.account.backfill_complete ? "disabled" : "" %>>
           Sync <%= it.backfillBatchSize %> older posts
@@ -70,12 +70,12 @@
   </div>
   <% } %>
   <div class="actions">
-    <form method="post" action="/admin/imports/<%= p.id %>/approve" class="inline">
+    <form method="post" action="<%= it.base %>/admin/imports/<%= p.id %>/approve" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit">Publish</button>
     </form>
-    <a href="/admin/posts/<%= p.id %>" class="button">Edit</a>
-    <form method="post" action="/admin/imports/<%= p.id %>/ignore" class="inline">
+    <a href="<%= it.base %>/admin/posts/<%= p.id %>" class="button">Edit</a>
+    <form method="post" action="<%= it.base %>/admin/imports/<%= p.id %>/ignore" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit" class="danger">Ignore</button>
     </form>

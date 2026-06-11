@@ -2,9 +2,9 @@
 <%~ include("../partials/admin-nav", it) %>
 
 <h1>Posts</h1>
-<p><a href="/admin/posts/new" class="button">New post</a></p>
+<p><a href="<%= it.base %>/admin/posts/new" class="button">New post</a></p>
 
-<form method="get" action="/admin/posts" class="filters">
+<form method="get" action="<%= it.base %>/admin/posts" class="filters">
   <select name="status">
     <option value="all">All statuses</option>
     <% it.statuses.forEach(function(st) { %>
@@ -27,23 +27,23 @@
   <% it.posts.forEach(function(p) { %>
     <tr>
       <td class="muted"><%= (p.published_at || p.created_at).slice(0, 10) %></td>
-      <td><a href="/admin/posts/<%= p.id %>"><%= p.title %></a>
+      <td><a href="<%= it.base %>/admin/posts/<%= p.id %>"><%= p.title %></a>
         <% if (p.x_post_id) { %><span class="badge badge-x">𝕏</span><% } %></td>
       <td><%= p.type %></td>
       <td><%= p.status %></td>
       <td class="actions">
         <% if (p.status !== 'published') { %>
-        <form method="post" action="/admin/posts/<%= p.id %>/publish" class="inline">
+        <form method="post" action="<%= it.base %>/admin/posts/<%= p.id %>/publish" class="inline">
           <input type="hidden" name="_csrf" value="<%= it.csrf %>">
           <button type="submit">Publish</button>
         </form>
         <% } else { %>
-        <form method="post" action="/admin/posts/<%= p.id %>/hide" class="inline">
+        <form method="post" action="<%= it.base %>/admin/posts/<%= p.id %>/hide" class="inline">
           <input type="hidden" name="_csrf" value="<%= it.csrf %>">
           <button type="submit">Hide</button>
         </form>
         <% } %>
-        <a href="/<%= p.slug %>" class="muted">view</a>
+        <a href="<%= it.base %>/<%= p.slug %>" class="muted">view</a>
       </td>
     </tr>
   <% }) %>

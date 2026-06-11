@@ -67,21 +67,21 @@
 <section class="post-side">
   <h2>Tools</h2>
   <div class="actions">
-    <form method="post" action="/admin/posts/<%= it.post.id %>/recalculate-related" class="inline">
+    <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/recalculate-related" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit">Recalculate related</button>
     </form>
     <% if (it.post.x_post_id) { %>
-    <form method="post" action="/admin/posts/<%= it.post.id %>/resync-x" class="inline">
+    <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/resync-x" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit">Resync X metrics</button>
     </form>
-    <form method="post" action="/admin/posts/<%= it.post.id %>/redownload-media" class="inline">
+    <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/redownload-media" class="inline">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit">Re-download media</button>
     </form>
     <% } %>
-    <form method="post" action="/admin/posts/<%= it.post.id %>/delete" class="inline"
+    <form method="post" action="<%= it.base %>/admin/posts/<%= it.post.id %>/delete" class="inline"
       onsubmit="return confirm('Archive this post?')">
       <input type="hidden" name="_csrf" value="<%= it.csrf %>">
       <button type="submit" class="danger">Delete</button>
@@ -107,7 +107,7 @@
   <h2>Related posts</h2>
   <ul>
     <% it.related.forEach(function(r) { %>
-      <li><a href="/admin/posts/<%= r.id %>"><%= r.title %></a></li>
+      <li><a href="<%= it.base %>/admin/posts/<%= r.id %>"><%= r.title %></a></li>
     <% }) %>
   </ul>
   <% } %>

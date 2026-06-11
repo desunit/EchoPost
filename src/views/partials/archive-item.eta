@@ -1,6 +1,6 @@
 <li class="archive-item">
   <span class="item-date"><%= it.formatDateShort(it.post.published_at) %></span>
   <span class="item-main">
-    <a class="item-title" href="/<%= it.post.slug %>"><%= it.post.title %></a><% if (it.post.type !== 'blog') { %><span class="badge badge-type"><%= it.post.type.replace('_', ' ') %></span><% } %><% if (it.post.x_post_id) { %><span class="badge badge-x" title="Mirrored from X">𝕏</span><% } %><% if (it.post.featured) { %><span class="badge badge-featured">★</span><% } %>
+    <a class="item-title" href="<%= it.base %>/<%= it.post.slug %>"><%= it.post.title %></a><% if (it.post.type !== 'blog') { %><span class="badge badge-type"><%= it.post.type.replace('_', ' ') %></span><% } %><% if (it.post.x_post_id) { %><span class="badge badge-x" title="Mirrored from X">𝕏</span><% } %><% if (it.post.featured) { %><span class="badge badge-featured">★</span><% } %>
   </span>
 </li>

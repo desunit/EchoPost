@@ -16,7 +16,7 @@
   <h2>Topics</h2>
   <p class="tag-cloud">
     <% it.stats.topTags.forEach(function(t) { %>
-      <a class="chip" href="/tag/<%= t.slug %>"><%= t.name %> (<%= t.count %>)</a>
+      <a class="chip" href="<%= it.base %>/tag/<%= t.slug %>"><%= t.name %> (<%= t.count %>)</a>
     <% }) %>
   </p>
 </section>
@@ -25,25 +25,25 @@
   <div>
     <h2>Most viewed on X</h2>
     <ol><% it.stats.mostViewedX.forEach(function(p) { %>
-      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+      <li><a href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
     <% }) %></ol>
   </div>
   <div>
     <h2>Most viewed on this site</h2>
     <ol><% it.stats.mostViewedBlog.forEach(function(p) { %>
-      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+      <li><a href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
     <% }) %></ol>
   </div>
   <div>
     <h2>X growth, last 30 days</h2>
     <ol><% it.stats.topGrowthX30d.forEach(function(p) { %>
-      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted">+<%= it.formatNumber(p.views) %></span></li>
+      <li><a href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a> <span class="muted">+<%= it.formatNumber(p.views) %></span></li>
     <% }) %></ol>
   </div>
   <div>
     <h2>Blog traffic, last 30 days</h2>
     <ol><% it.stats.topGrowthBlog30d.forEach(function(p) { %>
-      <li><a href="/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
+      <li><a href="<%= it.base %>/<%= p.slug %>"><%= p.title %></a> <span class="muted"><%= it.formatNumber(p.views) %></span></li>
     <% }) %></ol>
   </div>
 </section>
@@ -63,7 +63,7 @@
   <div class="post-squares">
     <% it.stats.postSquares.forEach(function(sq) { %>
       <a class="square group-<%= sq.group.toLowerCase().replace(/[^a-z]+/g, '-') %>"
-         href="/<%= sq.slug %>" title="<%= sq.title %> (<%= sq.year %>)"></a>
+         href="<%= it.base %>/<%= sq.slug %>" title="<%= sq.title %> (<%= sq.year %>)"></a>
     <% }) %>
   </div>
 </section>

@@ -85,7 +85,7 @@ export class NewsletterService {
         .run(newId(), email, sha256Hex(confirmToken), sha256Hex(unsubscribeToken), now, source, now, now);
     }
 
-    const confirmUrl = `${config.siteUrl}/subscribe/confirm?token=${confirmToken}`;
+    const confirmUrl = `${config.publicUrl}/subscribe/confirm?token=${confirmToken}`;
     try {
       await this.provider.sendTransactionalEmail({
         to: email,
@@ -122,8 +122,8 @@ export class NewsletterService {
       await this.provider.sendTransactionalEmail({
         to: row.email,
         subject: `Welcome to ${config.siteTitle}`,
-        text: `You're subscribed to ${config.siteTitle}. Read the archive: ${config.siteUrl}`,
-        html: `<p>You're subscribed to <strong>${escapeHtml(config.siteTitle)}</strong>.</p><p><a href="${config.siteUrl}">Browse the archive</a></p>`,
+        text: `You're subscribed to ${config.siteTitle}. Read the archive: ${config.publicUrl}`,
+        html: `<p>You're subscribed to <strong>${escapeHtml(config.siteTitle)}</strong>.</p><p><a href="${config.publicUrl}">Browse the archive</a></p>`,
       });
     } catch (err) {
       this.log.warn({ err }, "newsletter: welcome email failed");

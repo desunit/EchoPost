@@ -126,6 +126,9 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
         description: config.siteDescription,
         ...siteSettings(),
       },
+      // URL prefix for all internal page/feed/admin links (empty at root).
+      // Static assets (/assets, /media) are served at root and never prefixed.
+      base: config.basePath,
       formatDate,
       formatDateShort,
       formatNumber,
@@ -144,19 +147,30 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-ancestors 'self'",
     );
 
-    // slug redirects (PRD 5.13.2) — only for plain GET page requests
-    if (req.method === "GET" && !req.url.startsWith("/admin") && !req.url.startsWith("/assets")) {
-      const pathOnly = req.url.split("?")[0]!;
+    // slug redirects (PRD 5.13.2) — only for plain GET page requests.
+    // Redirects are stored as unprefixed slug paths (/old → /new); strip the
+    // base path before lookup and re-add it on the way out.
+    if (req.method === "GET" && !req.url.startsWith(`${config.basePath}/admin`) && !req.url.startsWith("/assets")) {
+      let pathOnly = req.url.split("?")[0]!;
+      if (config.basePath && pathOnly.startsWith(config.basePath)) {
+        pathOnly = pathOnly.slice(config.basePath.length) || "/";
+      }
       const redirect = services.seo.findRedirect(pathOnly);
       if (redirect) {
-        return reply.code(redirect.status_code).redirect(redirect.to_path);
+        return reply.code(redirect.status_code).redirect(config.basePath + redirect.to_path);
       }
     }
   });
 
-  registerPublicRoutes(app);
-  registerAdminRoutes(app);
+  // Health checks stay at root (infra), everything else mounts under basePath.
   registerHealthRoutes(app);
+  await app.register(
+    async (scope) => {
+      registerPublicRoutes(scope);
+      registerAdminRoutes(scope);
+    },
+    { prefix: config.basePath || undefined },
+  );
 
   app.setNotFoundHandler((req, reply) => {
     reply.code(404);

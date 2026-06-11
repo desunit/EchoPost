@@ -87,7 +87,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       const aliased = s.db
         .prepare("SELECT t.slug FROM tags t JOIN tag_aliases a ON a.tag_id = t.id WHERE a.alias = ?")
         .get(slug) as { slug: string } | undefined;
-      if (aliased) return reply.code(301).redirect(`/tag/${aliased.slug}`);
+      if (aliased) return reply.code(301).redirect(`${config.basePath}/tag/${aliased.slug}`);
       return reply.callNotFound();
     }
     const posts = s.tags.postsForTag(tag.id);
@@ -182,7 +182,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     if (!s.ama.isEnabled()) return reply.callNotFound();
     const body = req.body as Record<string, string>;
     const question = (body.question ?? "").trim();
-    if (!question) return reply.redirect("/ama");
+    if (!question) return reply.redirect(`${config.basePath}/ama`);
 
     const key = visitorHash(req.ip, req.headers["user-agent"] ?? "", new Date().toISOString().slice(0, 10));
     if (!s.ama.checkRateLimit(key)) {
@@ -241,7 +241,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       title: post.seo_title || `${post.title} — ${config.siteTitle}`,
       post,
       jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName),
-      canonicalUrl: post.canonical_url || `${config.siteUrl}/${post.slug}`,
+      canonicalUrl: post.canonical_url || `${config.publicUrl}/${post.slug}`,
       ...data,
     });
   });

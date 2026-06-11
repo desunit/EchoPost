@@ -124,6 +124,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
         url: config.siteUrl,
         title: config.siteTitle,
         description: config.siteDescription,
+        xUsername: config.x.username,
         ...siteSettings(),
       },
       // URL prefix for all internal page/feed/admin links (empty at root).

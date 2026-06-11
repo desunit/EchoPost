@@ -5,6 +5,10 @@ import { visitorHash } from "../lib/crypto.js";
 import { SORT_MODES, FILTER_MODES, type SortMode, type FilterMode } from "../modules/types.js";
 import { embedXReferences } from "../lib/x-embed.js";
 
+// Brand suffix used in page <title> tags. Prefers the X handle ("@desunit Blog")
+// and falls back to the configured site title.
+const brand = config.x.username ? `@${config.x.username} Blog` : config.siteTitle;
+
 function ownHost(): string {
   try {
     return new URL(config.siteUrl).hostname;
@@ -64,7 +68,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
 
     track(app, req, null);
     return app.view(reply, "home", {
-      title: config.siteTitle,
+      title: brand,
       sort,
       filter,
       sortModes: SORT_MODES,
@@ -76,7 +80,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   /* ---------- tags ---------- */
   app.get("/tags", async (req, reply) => {
     const tags = cache.getOrCompute("tags", 5 * 60_000, () => s.tags.listWithCounts());
-    return app.view(reply, "tags", { title: `Tags — ${config.siteTitle}`, tags });
+    return app.view(reply, "tags", { title: `Tags — ${brand}`, tags });
   });
 
   app.get("/tag/:slug", async (req, reply) => {
@@ -92,7 +96,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     }
     const posts = s.tags.postsForTag(tag.id);
     return app.view(reply, "tag", {
-      title: `${tag.name} — ${config.siteTitle}`,
+      title: `${tag.name} — ${brand}`,
       tag,
       posts,
       groups: groupByYear(posts),
@@ -105,14 +109,14 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     if (!tag) return reply.callNotFound();
     return reply
       .type("application/rss+xml; charset=utf-8")
-      .send(s.rss.build({ tagSlug: slug, title: `${tag.name} — ${config.siteTitle}` }));
+      .send(s.rss.build({ tagSlug: slug, title: `${tag.name} — ${brand}` }));
   });
 
   /* ---------- stats (PRD 5.11) ---------- */
   app.get("/stats", async (req, reply) => {
     const stats = s.stats.build();
     track(app, req, null);
-    return app.view(reply, "stats", { title: `Stats — ${config.siteTitle}`, stats });
+    return app.view(reply, "stats", { title: `Stats — ${brand}`, stats });
   });
 
   /* ---------- feeds + SEO ---------- */
@@ -120,10 +124,10 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     reply.type("application/rss+xml; charset=utf-8").send(s.rss.build()),
   );
   app.get("/rss/x", async (_req, reply) =>
-    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "x_post", title: `X posts — ${config.siteTitle}` })),
+    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "x_post", title: `X posts — ${brand}` })),
   );
   app.get("/rss/blog", async (_req, reply) =>
-    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "blog", title: `Blog — ${config.siteTitle}` })),
+    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "blog", title: `Blog — ${brand}` })),
   );
   app.get("/sitemap.xml", async (_req, reply) =>
     reply.type("application/xml; charset=utf-8").send(s.seo.sitemap()),
@@ -136,7 +140,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const results = q
       ? s.search.search(q, ["relevance", "latest", "most_viewed", "x_views", "blog_views"].includes(sort) ? (sort as any) : "relevance")
       : [];
-    return app.view(reply, "search", { title: `Search — ${config.siteTitle}`, q, sort, results });
+    return app.view(reply, "search", { title: `Search — ${brand}`, q, sort, results });
   });
 
   /* ---------- newsletter (PRD 5.9) ---------- */
@@ -175,7 +179,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   /* ---------- AMA (PRD 5.15) ---------- */
   app.get("/ama", async (req, reply) => {
     if (!s.ama.isEnabled()) return reply.callNotFound();
-    return app.view(reply, "ama", { title: `Ask my archive — ${config.siteTitle}`, answer: null, question: "", sources: [] });
+    return app.view(reply, "ama", { title: `Ask my archive — ${brand}`, answer: null, question: "", sources: [] });
   });
 
   app.post("/ama", async (req, reply) => {
@@ -187,7 +191,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const key = visitorHash(req.ip, req.headers["user-agent"] ?? "", new Date().toISOString().slice(0, 10));
     if (!s.ama.checkRateLimit(key)) {
       return app.view(reply, "ama", {
-        title: `Ask my archive — ${config.siteTitle}`,
+        title: `Ask my archive — ${brand}`,
         question,
         answer: "Rate limit reached — please try again in an hour.",
         sources: [],
@@ -196,7 +200,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const result = await s.ama.ask(question);
     s.auth.audit("ama_question", { length: question.length });
     return app.view(reply, "ama", {
-      title: `Ask my archive — ${config.siteTitle}`,
+      title: `Ask my archive — ${brand}`,
       question,
       answer: result.answer,
       sources: result.sources,
@@ -238,7 +242,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     });
 
     return app.view(reply, "post", {
-      title: post.seo_title || `${post.title} — ${config.siteTitle}`,
+      title: post.seo_title || `${post.title} — ${brand}`,
       post,
       jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName),
       canonicalUrl: post.canonical_url || `${config.publicUrl}/${post.slug}`,

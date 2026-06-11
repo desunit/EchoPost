@@ -115,7 +115,7 @@ a:hover { color: var(--accent); text-decoration-color: var(--accent); }
 }
 
 .site-name {
-  font-style: italic;
+  font-style: normal;
   font-weight: 600;
   font-size: 1.2rem;
   text-decoration: none;

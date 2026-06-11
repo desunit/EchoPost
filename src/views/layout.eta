@@ -12,6 +12,9 @@
   <% if (it.canonicalUrl) { %><meta property="og:url" content="<%= it.canonicalUrl %>"><% } %>
   <% if (it.ogImage) { %><meta property="og:image" content="<%= it.ogImage %>"><% } %>
   <meta name="twitter:card" content="<%= it.ogImage ? 'summary_large_image' : 'summary' %>">
+  <link rel="icon" type="image/jpeg" sizes="32x32" href="/assets/favicon-32x32.jpg">
+  <link rel="icon" type="image/jpeg" sizes="192x192" href="/assets/favicon-192x192.jpg">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.jpg">
   <link rel="alternate" type="application/rss+xml" title="<%= it.site.title %>" href="<%= it.base %>/rss">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +28,7 @@
 <body>
 <header class="site-header">
   <nav>
-    <a href="<%= it.base %>/" class="site-name"><%= it.site.title %></a>
+    <a href="<%= it.base %>/" class="site-name"><% if (it.site.xUsername) { %>@<%= it.site.xUsername %><% } else { %><%= it.site.title %><% } %></a>
     <span class="nav-links">
       <a href="<%= it.base %>/tags">Tags</a>
       <a href="<%= it.base %>/stats">Stats</a>
@@ -50,6 +53,7 @@
   <p class="muted">Total archive views: <%= it.formatNumber(it.totals.x + it.totals.blog) %>
     (<%= it.formatNumber(it.totals.x) %> on X · <%= it.formatNumber(it.totals.blog) %> on this site)</p>
   <% } %>
+  <p class="muted">© 2026 powered by <a href="https://github.com/desunit/EchoPost" rel="noopener">EchoPost</a></p>
 </footer>
 </body>
 </html>

@@ -1,8 +1,6 @@
 <% layout("layout") %>
 
 <section class="masthead">
-  <h1><%= it.site.title %></h1>
-  <p><%= it.site.description %></p>
   <span class="count-line"><%= it.count %> posts in the archive<% if (it.grouped && it.groups.length > 0) { %> · since <%= it.groups[it.groups.length - 1].year %><% } %></span>
 </section>
 

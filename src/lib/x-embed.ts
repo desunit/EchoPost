@@ -29,6 +29,13 @@ export interface EmbedOptions {
   ownUsername: string;
   /** Resolve a tweet id to a local archive post, or null if not ours / not stored. */
   lookup: (tweetId: string) => XRefCard | null;
+  /**
+   * Quoted-tweet id from the post's `referenced_tweets`. X quote-tweets carry the
+   * quoted status as a (often URL-stripped) reference rather than a body link, so
+   * it never reaches the anchor pass. When it resolves to one of our archived
+   * posts, render it as a trailing quote card — matching X's quote-tweet layout.
+   */
+  quotedTweetId?: string | null;
 }
 
 function widgetHtml(href: string): string {
@@ -72,5 +79,30 @@ export function embedXReferences(html: string, opts: EmbedOptions): { html: stri
     return widgetHtml(href);
   });
 
-  return { html: out, hasWidget };
+  // Quote-tweet: append a card for the quoted post unless the body already links it
+  // (e.g. the t.co URL survived stripping and was rendered as a card above).
+  let withQuote = out;
+  if (opts.quotedTweetId) {
+    const card = opts.lookup(opts.quotedTweetId);
+    if (card && !out.includes(`"${config.basePath}/${card.slug}"`)) {
+      withQuote = out + cardHtml(card);
+    }
+  }
+
+  return { html: withQuote, hasWidget };
+}
+
+/**
+ * Extract the quoted-tweet id from a post's raw X JSON (`referenced_tweets`),
+ * or null when the post isn't a quote-tweet / has no raw JSON.
+ */
+export function quotedTweetId(rawJson: string | null | undefined): string | null {
+  if (!rawJson) return null;
+  try {
+    const parsed = JSON.parse(rawJson) as { referenced_tweets?: { type: string; id: string }[] };
+    const quoted = parsed.referenced_tweets?.find((r) => r.type === "quoted");
+    return quoted?.id ?? null;
+  } catch {
+    return null;
+  }
 }

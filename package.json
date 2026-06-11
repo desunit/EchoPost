@@ -13,6 +13,7 @@
     "backup": "tsx src/scripts/backup.ts",
     "create-admin": "tsx src/scripts/create-admin.ts",
     "import-wordpress": "tsx src/scripts/import-wordpress.ts",
+    "rewrite-media-base": "tsx src/scripts/rewrite-media-base.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

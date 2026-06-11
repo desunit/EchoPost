@@ -102,7 +102,9 @@ export const config = {
   media: {
     driver: env("MEDIA_STORAGE_DRIVER", "local") as "local" | "s3",
     storagePath: path.resolve(root, env("MEDIA_STORAGE_PATH", "./data/media")),
-    publicUrl: env("MEDIA_PUBLIC_URL", "/media"),
+    // Served under the base path so sub-path deployments (e.g. /blog) resolve
+    // media through the same reverse-proxy route as pages.
+    publicUrl: basePath + env("MEDIA_PUBLIC_URL", "/media"),
     maxDownloadBytes: intEnv("MEDIA_MAX_DOWNLOAD_BYTES", 30 * 1024 * 1024),
     allowedHosts: ["pbs.twimg.com", "video.twimg.com", "abs.twimg.com", ...wordpressMediaHosts],
     s3: {

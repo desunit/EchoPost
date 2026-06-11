@@ -100,7 +100,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
   await app.register(fastifyFormbody);
   await app.register(fastifyStatic, {
     root: path.join(rootDir, "public"),
-    prefix: "/assets/",
+    prefix: `${config.basePath}/assets/`,
   });
   if (config.media.driver === "local") {
     await app.register(fastifyStatic, {
@@ -151,7 +151,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
     // slug redirects (PRD 5.13.2) — only for plain GET page requests.
     // Redirects are stored as unprefixed slug paths (/old → /new); strip the
     // base path before lookup and re-add it on the way out.
-    if (req.method === "GET" && !req.url.startsWith(`${config.basePath}/admin`) && !req.url.startsWith("/assets")) {
+    if (req.method === "GET" && !req.url.startsWith(`${config.basePath}/admin`) && !req.url.startsWith(`${config.basePath}/assets`)) {
       let pathOnly = req.url.split("?")[0]!;
       if (config.basePath && pathOnly.startsWith(config.basePath)) {
         pathOnly = pathOnly.slice(config.basePath.length) || "/";

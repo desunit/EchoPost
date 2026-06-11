@@ -12,15 +12,15 @@
   <% if (it.canonicalUrl) { %><meta property="og:url" content="<%= it.canonicalUrl %>"><% } %>
   <% if (it.ogImage) { %><meta property="og:image" content="<%= it.ogImage %>"><% } %>
   <meta name="twitter:card" content="<%= it.ogImage ? 'summary_large_image' : 'summary' %>">
-  <link rel="icon" type="image/jpeg" sizes="32x32" href="/assets/favicon-32x32.jpg">
-  <link rel="icon" type="image/jpeg" sizes="192x192" href="/assets/favicon-192x192.jpg">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.jpg">
+  <link rel="icon" type="image/jpeg" sizes="32x32" href="<%= it.base %>/assets/favicon-32x32.jpg">
+  <link rel="icon" type="image/jpeg" sizes="192x192" href="<%= it.base %>/assets/favicon-192x192.jpg">
+  <link rel="apple-touch-icon" href="<%= it.base %>/assets/apple-touch-icon.jpg">
   <link rel="alternate" type="application/rss+xml" title="<%= it.site.title %>" href="<%= it.base %>/rss">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="/assets/styles.css">
-  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="<%= it.base %>/assets/styles.css">
+  <script src="<%= it.base %>/assets/theme.js"></script>
   <meta name="theme-color" content="#fcfbf7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
   <% if (it.jsonLd) { %><script type="application/ld+json"><%~ it.jsonLd %></script><% } %>

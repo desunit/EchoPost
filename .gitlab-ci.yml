@@ -1,0 +1,4 @@
+include:
+  - project: "images/ci-templates"
+    ref: "v1.11"
+    file: "deploy-3.yml"

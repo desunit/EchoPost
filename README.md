@@ -6,6 +6,8 @@ Personal content archive and X-to-blog mirror. Imports selected posts from an X 
 
 **Stack:** Node.js 22+, TypeScript, Fastify, SQLite (WAL + FTS5), Eta templates, server-rendered HTML. Runs on one VPS.
 
+**Live demo:** EchoPost runs in production on the author's own site — see it in action at **[desunit.com/blog](https://desunit.com/blog/)**.
+
 ## Why this exists
 
 The pattern is borrowed from [levels.io](https://levels.io): mirror what you publish on X to a permanent, self-owned website. EchoPost packages that idea into a tool anyone can run.
@@ -46,7 +48,7 @@ Log in at `/admin/login` with `ADMIN_PASSWORD` (or run `npm run create-admin`).
 
 1. Set `X_BEARER_TOKEN` (and optionally `X_USERNAME`) in `.env`.
 2. Open **Admin → Review queue**, enter the X username, click **Connect**.
-3. Click **Sync now** (also runs automatically every 15 minutes).
+3. Click **Sync now** (also runs automatically once a day).
 4. Imported posts land in the review queue; publish, edit, or ignore each one.
 
 ## Commands
@@ -69,3 +71,13 @@ Log in at `/admin/login` with `ADMIN_PASSWORD` (or run `npm run create-admin`).
 - [docs/deployment.md](docs/deployment.md) — VPS setup, Docker, reverse proxy
 - [docs/backup-restore.md](docs/backup-restore.md) — backup schedule and restore procedure
 - [docs/prd-deviations.md](docs/prd-deviations.md) — where the implementation deviates from the PRD and why
+
+## Author
+
+Built by **Sergey Bogdanov** ([@desunit](https://x.com/desunit)) — software engineer and founder of [Songtive](https://songtive.com), where he builds apps and SaaS products.
+
+EchoPost powers his personal archive, live at **[desunit.com/blog](https://desunit.com/blog/)**, where every page is an X post or article mirrored by this project. More about him on the [About page](https://desunit.com/blog/about).
+
+- X: [@desunit](https://x.com/desunit)
+- GitHub: [@desunit](https://github.com/desunit)
+- Blog: [desunit.com/blog](https://desunit.com/blog/)

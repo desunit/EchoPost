@@ -51,7 +51,7 @@
       </ul>
     <% }) %>
   <% } else { %>
-    <ul class="archive-list">
+    <ul class="archive-list archive-list--meta">
       <% it.groups[0].posts.forEach(function(p) { %>
         <li class="archive-item">
           <span class="item-date"><%= it.formatDateShort(p.published_at) %>

@@ -27,13 +27,24 @@
   </p>
   <% } %>
 
+  <% var cover = null; %>
+  <% if (it.post.type === "blog" && it.post.og_image_media_id) { %>
+    <% cover = it.media.find(function(m) { return m.id === it.post.og_image_media_id && m.mime_type && m.mime_type.indexOf("image/") === 0; }); %>
+  <% } %>
+  <% if (cover) { %>
+  <figure class="post-cover">
+    <img src="<%= cover.public_url %>" alt="<%= cover.alt_text || it.post.title %>"
+      <% if (cover.width) { %>width="<%= cover.width %>"<% } %> <% if (cover.height) { %>height="<%= cover.height %>"<% } %>>
+  </figure>
+  <% } %>
+
   <div class="post-body">
     <%~ it.bodyHtml %>
   </div>
 
   <% var inlineImages = (it.bodyHtml || ""); %>
   <% it.media.forEach(function(m) { %>
-    <% if (m.mime_type && m.mime_type.indexOf("image/") === 0 && inlineImages.indexOf(m.public_url) === -1) { %>
+    <% if (m.mime_type && m.mime_type.indexOf("image/") === 0 && inlineImages.indexOf(m.public_url) === -1 && (!cover || m.id !== cover.id)) { %>
       <figure class="post-media">
         <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy"
           <% if (m.width) { %>width="<%= m.width %>"<% } %> <% if (m.height) { %>height="<%= m.height %>"<% } %>>

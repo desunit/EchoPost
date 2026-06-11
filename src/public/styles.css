@@ -239,6 +239,11 @@ a.chip { display: inline-block; }
   align-items: baseline;
 }
 
+/* Views-sorted list: the date cell also carries the view count ("· 7,556,438 on
+   X"), which is wider than the fixed date column — let it grow so it can't
+   overlap the title. */
+.archive-list--meta .archive-item { grid-template-columns: minmax(6.8rem, max-content) 1fr; }
+
 .item-date, .archive-item .date {
   font-size: 0.7rem;
   color: var(--muted);
@@ -329,6 +334,28 @@ a.chip { display: inline-block; }
 }
 .post-body p { margin: 0 0 1.2em; }
 .post-body img { max-width: 100%; height: auto; }
+/* Featured/cover image at the top of a blog post — a modest banner, not a hero. */
+.post-cover { margin: 1.2rem 0 1.8rem; }
+.post-cover img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+}
+/* Inline prose links need to read as links — accent underline, not the faint
+   site-wide hairline (which is invisible against body text). */
+.post-body a { text-decoration-color: var(--accent); text-decoration-thickness: 1.5px; }
+.post-body a:hover { color: var(--accent); }
+/* Responsive 16:9 YouTube embeds (no wrapper div needed). */
+.post-body iframe.yt-embed,
+iframe.yt-embed {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  margin: 1.6rem 0;
+  border: 0;
+}
 .post-body pre {
   font-family: var(--font-mono);
   font-size: 0.8em;
@@ -352,6 +379,18 @@ a.chip { display: inline-block; }
   font-family: var(--font-mono);
   letter-spacing: 0.6em;
 }
+.post-body details {
+  border: 1px solid var(--hairline);
+  margin: 1.4em 0;
+  padding: 0 1rem;
+}
+.post-body summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.8rem 0;
+  list-style-position: inside;
+}
+.post-body details[open] summary { border-bottom: 1px solid var(--hairline); margin-bottom: 0.8rem; }
 .post-body table { border-collapse: collapse; width: 100%; font-size: 0.95em; }
 .post-body th, .post-body td { border: 1px solid var(--hairline); padding: 0.4rem 0.6rem; text-align: left; }
 

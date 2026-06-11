@@ -1,8 +1,28 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 import TurndownService from "turndown";
+import { config } from "../config/index.js";
 
 marked.setOptions({ gfm: true, breaks: false });
+
+/**
+ * `rel` for an anchor: off-site links get "nofollow" (plus noopener/noreferrer)
+ * so SEO equity isn't passed to third parties; internal links and our own
+ * properties (config.links.followHosts) stay "follow" with just noopener.
+ */
+function relForLink(href: string | undefined): string {
+  if (!href) return "noopener";
+  let hostname: string;
+  try {
+    const u = new URL(href); // absolute URLs only; relative/anchor URLs throw
+    if (u.protocol !== "http:" && u.protocol !== "https:") return "noopener"; // mailto:, tel:, …
+    hostname = u.hostname.toLowerCase();
+  } catch {
+    return "noopener"; // relative path or #anchor → internal
+  }
+  const follow = config.links.followHosts.some((d) => hostname === d || hostname.endsWith("." + d));
+  return follow ? "noopener" : "nofollow noopener noreferrer";
+}
 
 // HTML → Markdown for imported sources (e.g. WordPress content.rendered).
 // Markdown stays the canonical body so the admin editor and the existing
@@ -84,7 +104,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   transformTags: {
     a: (tagName, attribs) => ({
       tagName,
-      attribs: { ...attribs, rel: "noopener" },
+      attribs: { ...attribs, rel: relForLink(attribs.href) },
     }),
     img: (tagName, attribs) => ({
       tagName,

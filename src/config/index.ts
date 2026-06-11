@@ -62,6 +62,14 @@ const wordpressMediaHosts = [hostOf(wordpressUrl), ...listEnv("MEDIA_EXTRA_ALLOW
   (h): h is string => !!h,
 );
 
+// Outbound links to these hosts (and their subdomains) stay "follow" — own
+// properties we want to pass SEO equity to. Every other off-site link in
+// rendered content gets rel="nofollow". The site's own host is always included;
+// add the rest (your apps) via LINK_FOLLOW_HOSTS.
+const followLinkHosts = [hostOf(siteUrl), ...listEnv("LINK_FOLLOW_HOSTS")]
+  .filter((h): h is string => !!h)
+  .map((h) => h.toLowerCase());
+
 export const config = {
   env: env("NODE_ENV", "development"),
   isProduction: env("NODE_ENV") === "production",
@@ -73,6 +81,8 @@ export const config = {
   // Absolute base for all public links: origin + basePath. Use this (not siteUrl)
   // for canonical URLs, feeds, sitemap, and JSON-LD.
   publicUrl: siteUrl + basePath,
+  // Link rel policy for rendered content: hosts that stay "follow".
+  links: { followHosts: followLinkHosts },
   siteTitle: env("SITE_TITLE", "EchoPost"),
   siteDescription: env("SITE_DESCRIPTION", "Personal content archive and X mirror"),
 

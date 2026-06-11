@@ -39,6 +39,22 @@ describe("markdown rendering", () => {
     expect(html).toContain("playsinline");
   });
 
+  it("marks off-site links rel=nofollow", () => {
+    const html = renderMarkdown("[external](https://random-third-party.example/page)");
+    expect(html).toContain('rel="nofollow noopener noreferrer"');
+  });
+
+  it("does not nofollow relative/internal links", () => {
+    const html = renderMarkdown("[home](/about)");
+    expect(html).toContain('rel="noopener"');
+    expect(html).not.toContain("nofollow");
+  });
+
+  it("does not nofollow mailto links", () => {
+    const html = renderMarkdown("[mail](mailto:hi@example.com)");
+    expect(html).not.toContain("nofollow");
+  });
+
   it("extracts plain text", () => {
     expect(markdownToText("# Hi\n\nSome *text* here.")).toBe("Hi Some text here.");
   });

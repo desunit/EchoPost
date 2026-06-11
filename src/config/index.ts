@@ -116,7 +116,8 @@ export const config = {
     // Served under the base path so sub-path deployments (e.g. /blog) resolve
     // media through the same reverse-proxy route as pages.
     publicUrl: basePath + env("MEDIA_PUBLIC_URL", "/media"),
-    maxDownloadBytes: intEnv("MEDIA_MAX_DOWNLOAD_BYTES", 30 * 1024 * 1024),
+    // 100 MB: large enough for mirrored X videos (the highest-bitrate MP4 variant).
+    maxDownloadBytes: intEnv("MEDIA_MAX_DOWNLOAD_BYTES", 100 * 1024 * 1024),
     allowedHosts: ["pbs.twimg.com", "video.twimg.com", "abs.twimg.com", ...wordpressMediaHosts],
     s3: {
       endpoint: env("S3_ENDPOINT"),

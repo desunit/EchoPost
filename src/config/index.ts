@@ -19,6 +19,18 @@ function intEnv(key: string, fallback: number): number {
   return Number.isFinite(v) ? v : fallback;
 }
 
+function listEnv(key: string): string[] {
+  return env(key).split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+function hostOf(url: string): string | null {
+  try {
+    return url ? new URL(url).hostname : null;
+  } catch {
+    return null;
+  }
+}
+
 // Normalize an optional URL path prefix: "" / "/" → "", "blog" / "/blog/" → "/blog".
 // When set, the whole app (pages, feeds, admin) is mounted under this path.
 function normalizeBasePath(raw: string): string {
@@ -30,6 +42,14 @@ function normalizeBasePath(raw: string): string {
 const root = process.cwd();
 const siteUrl = env("SITE_URL", "http://localhost:3000").replace(/\/$/, "");
 const basePath = normalizeBasePath(env("BASE_PATH"));
+
+const wordpressUrl = env("WORDPRESS_URL").replace(/\/$/, "");
+// The WordPress site host plus any CDN/upload hosts must be allowlisted before
+// MediaService will mirror their images (SSRF guard). Derived from WORDPRESS_URL
+// automatically; add CDN/other hosts via MEDIA_EXTRA_ALLOWED_HOSTS.
+const wordpressMediaHosts = [hostOf(wordpressUrl), ...listEnv("MEDIA_EXTRA_ALLOWED_HOSTS")].filter(
+  (h): h is string => !!h,
+);
 
 export const config = {
   env: env("NODE_ENV", "development"),
@@ -67,12 +87,24 @@ export const config = {
     backfillBatchSize: intEnv("X_BACKFILL_BATCH_SIZE", 100),
   },
 
+  wordpress: {
+    // Base URL of the WordPress site to import from, e.g. https://blog.example.com.
+    url: wordpressUrl,
+    // Posts fetched per WP REST API page (max 100).
+    perPage: Math.min(intEnv("WORDPRESS_PER_PAGE", 100), 100),
+    // Which content types to import: WordPress "posts" and/or "pages".
+    contentTypes: (listEnv("WORDPRESS_CONTENT_TYPES").length
+      ? listEnv("WORDPRESS_CONTENT_TYPES")
+      : ["posts", "pages"]
+    ).filter((t): t is "posts" | "pages" => t === "posts" || t === "pages"),
+  },
+
   media: {
     driver: env("MEDIA_STORAGE_DRIVER", "local") as "local" | "s3",
     storagePath: path.resolve(root, env("MEDIA_STORAGE_PATH", "./data/media")),
     publicUrl: env("MEDIA_PUBLIC_URL", "/media"),
     maxDownloadBytes: intEnv("MEDIA_MAX_DOWNLOAD_BYTES", 30 * 1024 * 1024),
-    allowedHosts: ["pbs.twimg.com", "video.twimg.com", "abs.twimg.com"],
+    allowedHosts: ["pbs.twimg.com", "video.twimg.com", "abs.twimg.com", ...wordpressMediaHosts],
     s3: {
       endpoint: env("S3_ENDPOINT"),
       bucket: env("S3_BUCKET"),

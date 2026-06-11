@@ -35,6 +35,7 @@ export interface PostInput {
   xConversationId?: string | null;
   xAuthorId?: string | null;
   xRawJson?: string | null;
+  wpPostId?: number | null;
   importedAt?: string | null;
   preserveManualTitle?: boolean;
   preserveManualBody?: boolean;
@@ -75,11 +76,11 @@ export class PostsService {
         `INSERT INTO posts (
           id, type, status, title, slug, excerpt, markdown_body, html_body, normalized_text,
           language, published_at, pinned, featured, source_url, canonical_url, external_url,
-          x_post_id, x_conversation_id, x_author_id, x_raw_json,
+          x_post_id, x_conversation_id, x_author_id, x_raw_json, wp_post_id,
           preserve_manual_title, preserve_manual_body,
           seo_title, seo_description, og_image_media_id, word_count,
           created_at, updated_at, imported_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         id, input.type, status, input.title, slug,
@@ -89,7 +90,7 @@ export class PostsService {
         input.pinned ? 1 : 0, input.featured ? 1 : 0,
         input.sourceUrl ?? null, input.canonicalUrl ?? null, input.externalUrl ?? null,
         input.xPostId ?? null, input.xConversationId ?? null, input.xAuthorId ?? null,
-        input.xRawJson ?? null,
+        input.xRawJson ?? null, input.wpPostId ?? null,
         input.preserveManualTitle ? 1 : 0, input.preserveManualBody ? 1 : 0,
         input.seoTitle ?? null, input.seoDescription ?? null, input.ogImageMediaId ?? null,
         countWords(text), now, now, input.importedAt ?? null,
@@ -221,6 +222,10 @@ export class PostsService {
 
   getByXPostId(xPostId: string): PostRow | undefined {
     return this.db.prepare("SELECT * FROM posts WHERE x_post_id = ?").get(xPostId) as PostRow | undefined;
+  }
+
+  getByWpPostId(wpPostId: number): PostRow | undefined {
+    return this.db.prepare("SELECT * FROM posts WHERE wp_post_id = ?").get(wpPostId) as PostRow | undefined;
   }
 
   getThreadRootByConversation(conversationId: string): PostRow | undefined {

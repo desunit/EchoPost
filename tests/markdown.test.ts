@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderMarkdown, markdownToText, makeExcerpt, countWords } from "../src/lib/markdown.js";
+import { renderMarkdown, markdownToText, makeExcerpt, countWords, htmlToMarkdown, youTubeId } from "../src/lib/markdown.js";
 
 describe("markdown rendering", () => {
   it("renders basic markdown", () => {
@@ -35,5 +35,58 @@ describe("markdown rendering", () => {
     const excerpt = makeExcerpt("word ".repeat(100), 50);
     expect(excerpt.length).toBeLessThanOrEqual(51);
     expect(excerpt.endsWith("…")).toBe(true);
+  });
+});
+
+describe("YouTube embeds", () => {
+  it("extracts the video id from common URL forms", () => {
+    expect(youTubeId("https://www.youtube.com/embed/5QcCeSsNRks?feature=oembed")).toBe("5QcCeSsNRks");
+    expect(youTubeId("https://youtu.be/QX_oy9614HQ")).toBe("QX_oy9614HQ");
+    expect(youTubeId("https://www.youtube.com/watch?v=FnL4VeUaZiw&t=10s")).toBe("FnL4VeUaZiw");
+    expect(youTubeId("https://example.com/not-a-video")).toBeNull();
+  });
+
+  it("converts a WordPress YouTube oembed iframe to a nocookie embed", () => {
+    const wp = '<figure class="wp-block-embed is-provider-youtube"><div class="wp-block-embed__wrapper">' +
+      '<iframe title="Great talk" src="https://www.youtube.com/embed/5QcCeSsNRks?feature=oembed"></iframe></div></figure>';
+    const md = htmlToMarkdown(wp);
+    expect(md).toContain('<iframe class="yt-embed"');
+    expect(md).toContain("https://www.youtube-nocookie.com/embed/5QcCeSsNRks");
+    expect(md).toContain('title="Great talk"');
+  });
+
+  it("keeps the YouTube iframe through render/sanitize but drops other hosts", () => {
+    const ok = renderMarkdown('<iframe class="yt-embed" src="https://www.youtube-nocookie.com/embed/abc12345678"></iframe>');
+    expect(ok).toContain("youtube-nocookie.com/embed/abc12345678");
+    const evil = renderMarkdown('<iframe src="https://evil.example.com/x"></iframe>');
+    expect(evil).not.toContain("evil.example.com");
+  });
+
+  it("turns a non-YouTube iframe into a plain link so nothing is lost", () => {
+    expect(htmlToMarkdown('<iframe src="https://example.com/widget"></iframe>'))
+      .toContain("[Embedded content](https://example.com/widget)");
+  });
+});
+
+describe("WordPress content-toggle accordions", () => {
+  const accordion =
+    '<div class="wp-block-ub-content-toggle-accordion">' +
+    '<div class="wp-block-ub-content-toggle-accordion-title-wrap">' +
+    '<p class="wp-block-ub-content-toggle-accordion-title">Deepseek (DeepThink)</p>' +
+    '<div class="wp-block-ub-content-toggle-accordion-toggle-wrap"><span></span></div></div>' +
+    '<div class="wp-block-ub-content-toggle-accordion-content-wrap ub-hide"><p>Hidden reasoning here.</p></div></div>';
+
+  it("converts a collapsible block to a native <details>/<summary>", () => {
+    const md = htmlToMarkdown(accordion);
+    expect(md).toContain("<details><summary>Deepseek (DeepThink)</summary>");
+    expect(md).toContain("</details>");
+    expect(md).toContain("Hidden reasoning here.");
+  });
+
+  it("renders the collapsible through sanitize as real <details>/<summary>", () => {
+    const html = renderMarkdown(htmlToMarkdown(accordion));
+    expect(html).toContain("<details>");
+    expect(html).toContain("<summary>Deepseek (DeepThink)</summary>");
+    expect(html).toContain("<p>Hidden reasoning here.</p>");
   });
 });

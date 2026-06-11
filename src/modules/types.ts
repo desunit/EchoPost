@@ -46,6 +46,7 @@ export interface PostRow {
   x_conversation_id: string | null;
   x_author_id: string | null;
   x_raw_json: string | null;
+  wp_post_id: number | null;
   x_source_unavailable: number;
   preserve_manual_title: number;
   preserve_manual_body: number;

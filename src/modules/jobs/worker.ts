@@ -126,8 +126,7 @@ export class JobWorker {
       );
     };
 
-    schedule("*/15 * * * *", "x_import");            // import new X posts
-    schedule("*/15 * * * *", "x_metrics_refresh");   // tier logic decides what is due
+    schedule("*/15 * * * *", "x_import");            // import new X posts (records a metrics snapshot per new post)
     schedule("30 3 * * *", "recalculate_related");   // nightly recalculation
     schedule("15 * * * *", "rebuild_caches");        // hourly cache + stats refresh
     schedule("45 2 * * *", "verify_media");          // daily media verification

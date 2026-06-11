@@ -10,8 +10,19 @@ if (typeof process.loadEnvFile === "function" && fs.existsSync(envFile)) {
   process.loadEnvFile(envFile);
 }
 
+// Strip a dotenv-style inline comment (whitespace + `#` to end of line). Neither
+// Node's process.loadEnvFile nor Docker Compose's env_file parser removes these,
+// so a line like `MEDIA_STORAGE_DRIVER=local # local | s3` otherwise yields the
+// literal value "local # local | s3". A `#` without leading whitespace (e.g. a
+// URL fragment or a `#`-bearing secret) is preserved.
+export function stripInlineComment(value: string): string {
+  return value.replace(/\s+#.*$/, "");
+}
+
 function env(key: string, fallback = ""): string {
-  return process.env[key]?.trim() || fallback;
+  const raw = process.env[key];
+  if (raw === undefined) return fallback;
+  return stripInlineComment(raw).trim() || fallback;
 }
 
 function intEnv(key: string, fallback: number): number {
@@ -117,11 +128,21 @@ export const config = {
   },
 
   email: {
-    provider: env("EMAIL_PROVIDER", "console") as "console" | "resend" | "postmark" | "webhook",
+    provider: env("EMAIL_PROVIDER", "console") as "console" | "resend" | "postmark" | "smtp" | "webhook",
     from: env("EMAIL_FROM", "newsletter@example.com"),
     resendApiKey: env("RESEND_API_KEY"),
     postmarkToken: env("POSTMARK_API_TOKEN"),
     webhookUrl: env("NEWSLETTER_WEBHOOK_URL"),
+    // SMTP, including AWS SES SMTP (host email-smtp.<region>.amazonaws.com).
+    // secure=true uses the TLS-wrapper port (465/2465); secure=false uses
+    // STARTTLS (25/587/2587). SES always requires TLS.
+    smtp: {
+      host: env("SMTP_HOST"),
+      port: intEnv("SMTP_PORT", 587),
+      user: env("SMTP_USER"),
+      pass: env("SMTP_PASS"),
+      secure: env("SMTP_SECURE") === "true",
+    },
   },
 
   llm: {

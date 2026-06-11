@@ -1,6 +1,6 @@
 <% layout("layout") %>
 
-<article class="post">
+<article class="post" data-slug="<%= it.post.slug %>">
   <p><a href="<%= it.base %>/">&larr; Back to archive</a></p>
   <h1><%= it.post.title %></h1>
 

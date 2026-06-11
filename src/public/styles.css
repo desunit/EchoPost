@@ -334,6 +334,13 @@ a.chip { display: inline-block; }
 }
 .post-body p { margin: 0 0 1.2em; }
 .post-body img { max-width: 100%; height: auto; }
+/* About page: float the leading profile photo left so the bio text wraps around
+   it. Scoped by slug so no other page is affected. */
+.post[data-slug="about"] .post-body p:first-child img {
+  float: left;
+  width: 220px;
+  margin: 0.3rem 1.2rem 0.6rem 0;
+}
 /* Featured/cover image at the top of a blog post — a modest banner, not a hero. */
 .post-cover { margin: 1.2rem 0 1.8rem; }
 .post-cover img {

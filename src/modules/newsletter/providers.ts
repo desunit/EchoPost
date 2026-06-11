@@ -1,3 +1,4 @@
+import nodemailer, { type Transporter } from "nodemailer";
 import { config } from "../../config/index.js";
 
 export interface EmailProvider {
@@ -60,12 +61,48 @@ class PostmarkProvider implements EmailProvider {
   }
 }
 
+/**
+ * Generic SMTP provider — works with AWS SES SMTP, Mailgun, a local relay, etc.
+ * The transport is created once and reused (connection pooling).
+ */
+class SmtpProvider implements EmailProvider {
+  private transport: Transporter | null = null;
+
+  private getTransport(): Transporter {
+    if (!this.transport) {
+      const { host, port, user, pass, secure } = config.email.smtp;
+      if (!host) throw new Error("SMTP_HOST is not configured");
+      this.transport = nodemailer.createTransport({
+        host,
+        port,
+        secure, // true → TLS-wrapper port (465); false → STARTTLS (587)
+        requireTLS: !secure, // SES (and good practice) requires TLS even on 587
+        auth: user ? { user, pass } : undefined,
+        pool: true,
+      });
+    }
+    return this.transport;
+  }
+
+  async sendTransactionalEmail(input: { to: string; subject: string; html: string; text: string }) {
+    await this.getTransport().sendMail({
+      from: config.email.from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    });
+  }
+}
+
 export function createEmailProvider(): EmailProvider {
   switch (config.email.provider) {
     case "resend":
       return new ResendProvider();
     case "postmark":
       return new PostmarkProvider();
+    case "smtp":
+      return new SmtpProvider();
     default:
       return new ConsoleProvider();
   }

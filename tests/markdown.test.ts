@@ -23,6 +23,22 @@ describe("markdown rendering", () => {
     expect(html).toContain('loading="lazy"');
   });
 
+  it("keeps inline <video> with poster and playback attributes", () => {
+    const html = renderMarkdown('<video src="/media/clip.mp4" poster="/media/poster.jpg" controls preload="metadata"></video>');
+    expect(html).toContain("<video");
+    expect(html).toContain('src="/media/clip.mp4"');
+    expect(html).toContain('poster="/media/poster.jpg"');
+    expect(html).toContain("controls");
+  });
+
+  it("keeps autoplay/loop/muted on inline <video> (animated GIFs)", () => {
+    const html = renderMarkdown('<video src="/media/gif.mp4" autoplay loop muted playsinline></video>');
+    expect(html).toContain("autoplay");
+    expect(html).toContain("loop");
+    expect(html).toContain("muted");
+    expect(html).toContain("playsinline");
+  });
+
   it("extracts plain text", () => {
     expect(markdownToText("# Hi\n\nSome *text* here.")).toBe("Hi Some text here.");
   });

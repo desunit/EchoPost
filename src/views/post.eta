@@ -43,8 +43,27 @@
   </div>
 
   <% var inlineImages = (it.bodyHtml || ""); %>
+  <% var posters = it.media.filter(function(m){ return /_thumbnail$/.test(m.source_type || ""); }); %>
+  <% var hasVideo = it.media.some(function(m){ return (m.mime_type || "").indexOf("video/") === 0; }); %>
+  <% var pi = 0; %>
   <% it.media.forEach(function(m) { %>
-    <% if (m.mime_type && m.mime_type.indexOf("image/") === 0 && inlineImages.indexOf(m.public_url) === -1 && (!cover || m.id !== cover.id)) { %>
+    <% var isThumb = /_thumbnail$/.test(m.source_type || ""); %>
+    <% var isVideo = (m.mime_type || "").indexOf("video/") === 0; %>
+    <% if (isVideo) { %>
+      <% var poster = posters[pi++]; %>
+      <figure class="post-media">
+        <video src="<%= m.public_url %>"<% if (poster) { %> poster="<%= poster.public_url %>"<% } %>
+          <% if (m.source_type === "animated_gif") { %>autoplay loop muted playsinline<% } else { %>controls<% } %>
+          preload="metadata"></video>
+      </figure>
+    <% } else if (isThumb) { /* poster thumbnail: og:image only — shown only when the mp4 is absent */ %>
+      <% if (!hasVideo) { %>
+      <figure class="post-media">
+        <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy"
+          <% if (m.width) { %>width="<%= m.width %>"<% } %> <% if (m.height) { %>height="<%= m.height %>"<% } %>>
+      </figure>
+      <% } %>
+    <% } else if (m.mime_type && m.mime_type.indexOf("image/") === 0 && inlineImages.indexOf(m.public_url) === -1 && (!cover || m.id !== cover.id)) { %>
       <figure class="post-media">
         <img src="<%= m.public_url %>" alt="<%= m.alt_text || '' %>" loading="lazy"
           <% if (m.width) { %>width="<%= m.width %>"<% } %> <% if (m.height) { %>height="<%= m.height %>"<% } %>>

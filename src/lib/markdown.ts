@@ -68,7 +68,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: {
     a: ["href", "title", "rel", "target"],
     img: ["src", "alt", "title", "width", "height", "loading"],
-    video: ["src", "controls", "poster", "width", "height", "preload"],
+    video: ["src", "controls", "poster", "width", "height", "preload", "autoplay", "loop", "muted", "playsinline"],
     audio: ["src", "controls", "preload"],
     source: ["src", "type"],
     iframe: ["src", "title", "loading", "allowfullscreen", "width", "height", "class"],

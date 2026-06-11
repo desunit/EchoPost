@@ -43,6 +43,9 @@ export interface XMedia {
   height?: number;
   alt_text?: string;
   duration_ms?: number;
+  // For type=video|animated_gif: the playable renditions. Pick the highest
+  // bit_rate video/mp4 to mirror the actual clip (animated_gif has one, no bit_rate).
+  variants?: Array<{ bit_rate?: number; content_type: string; url: string }>;
 }
 
 export interface XUser {
@@ -71,7 +74,7 @@ export class XAuthError extends Error {}
 
 const TWEET_FIELDS =
   "created_at,public_metrics,entities,referenced_tweets,conversation_id,lang,possibly_sensitive,author_id,attachments,in_reply_to_user_id,note_tweet";
-const MEDIA_FIELDS = "url,preview_image_url,width,height,alt_text,type,duration_ms";
+const MEDIA_FIELDS = "url,preview_image_url,width,height,alt_text,type,duration_ms,variants";
 
 /**
  * Minimal X API v2 client. Uses bearer-token auth for public data; a

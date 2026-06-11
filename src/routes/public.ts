@@ -17,6 +17,11 @@ function ownHost(): string {
   }
 }
 
+/** Absolute URL for a media public_url (already absolute under the S3 driver). */
+function absoluteMediaUrl(publicUrl: string): string {
+  return /^https?:\/\//.test(publicUrl) ? publicUrl : config.siteUrl + publicUrl;
+}
+
 function track(app: FastifyInstance, req: FastifyRequest, postId: string | null): void {
   try {
     app.services.analytics.recordView({
@@ -239,7 +244,18 @@ export function registerPublicRoutes(app: FastifyInstance): void {
           return { slug: ref.slug, title: ref.title, excerpt: ref.excerpt ?? "", thumbnailUrl: img?.public_url };
         },
       });
-      return { tags, media, related, prev, next, metrics, blogViews, totals, archiveGroups, bodyHtml, hasXWidget };
+      // og:image: the post's chosen image, else the first available image —
+      // including a video's poster thumbnail — so every post with a picture
+      // (photo or video) shares one as its social card.
+      const ogMedia =
+        media.find((m) => m.id === post.og_image_media_id && m.mime_type?.startsWith("image/")) ??
+        media.find((m) => m.mime_type?.startsWith("image/"));
+      const ogImage = ogMedia ? absoluteMediaUrl(ogMedia.public_url) : undefined;
+
+      return {
+        tags, media, related, prev, next, metrics, blogViews, totals, archiveGroups, bodyHtml, hasXWidget,
+        ogImage, ogType: "article", metaDescription: post.seo_description || post.excerpt || undefined,
+      };
     });
 
     return app.view(reply, "post", {

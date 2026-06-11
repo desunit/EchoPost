@@ -11,7 +11,7 @@ import type { LlmMetadataProvider } from "../metadata/llm.js";
 import { nowIso } from "../../lib/time.js";
 import { slugify } from "../../lib/slugify.js";
 import { invalidateContentCaches } from "../../lib/cache.js";
-import type { ImportRules, PostRow } from "../types.js";
+import type { ImportRules, PostRow, MediaRow } from "../types.js";
 
 export interface ImportSummary {
   fetched: number;
@@ -379,10 +379,7 @@ export class XImportService {
 
     const startOrder = this.media.forPost(root.id).length;
     const mirrored = await this.mirrorTweetMedia(root.id, tweet, mediaMap, startOrder);
-    const mediaMarkdown = mirrored
-      .filter((m) => m.mime_type?.startsWith("image/"))
-      .map((m) => `\n![${(m.alt_text ?? "").replace(/[\[\]]/g, "")}](${m.public_url})`)
-      .join("");
+    const mediaMarkdown = this.mediaMarkdownFor(mirrored);
 
     if (root.preserve_manual_body !== 1) {
       // Sections flow as paragraphs — no visible <hr> separator between them.
@@ -434,34 +431,75 @@ export class XImportService {
     return text.trim();
   }
 
+  /** Highest-bitrate MP4 rendition of a video / animated_gif, or null. */
+  private bestMp4(m: XMedia): string | null {
+    const mp4s = (m.variants ?? []).filter((v) => v.content_type === "video/mp4" && v.url);
+    if (mp4s.length === 0) return null;
+    return mp4s.sort((a, b) => (b.bit_rate ?? 0) - (a.bit_rate ?? 0))[0]!.url;
+  }
+
   private async mirrorTweetMedia(
     postId: string,
     tweet: XTweet,
     mediaMap: Map<string, XMedia>,
     startOrder = 0,
-  ): Promise<Array<{ public_url: string; mime_type: string | null; alt_text: string | null }>> {
-    const mirrored: Array<{ public_url: string; mime_type: string | null; alt_text: string | null }> = [];
+  ): Promise<MediaRow[]> {
+    const mirrored: MediaRow[] = [];
     let order = startOrder;
+    const mirror = async (sourceUrl: string, sourceType: string, altText: string | null) => {
+      try {
+        mirrored.push(
+          await this.media.mirrorRemote({ postId, sourceUrl, sourceType, altText, sortOrder: order++ }),
+        );
+      } catch (err: any) {
+        // media failures must not block the import; the daily verify job retries
+        this.log.warn({ err, postId, sourceUrl }, "x import: media mirror failed");
+      }
+    };
     for (const key of tweet.attachments?.media_keys ?? []) {
       const m = mediaMap.get(key);
       if (!m) continue;
-      const url = m.type === "photo" ? m.url : (m.preview_image_url ?? m.url);
-      if (!url) continue;
-      try {
-        const row = await this.media.mirrorRemote({
-          postId,
-          sourceUrl: url,
-          sourceType: m.type === "photo" ? "image" : `${m.type}_thumbnail`,
-          altText: m.alt_text ?? null,
-          sortOrder: order++,
-        });
-        mirrored.push(row);
-      } catch (err: any) {
-        // media failures must not block the import; the daily verify job retries
-        this.log.warn({ err, postId, url }, "x import: media mirror failed");
+      if (m.type === "photo") {
+        if (m.url) await mirror(m.url, "image", m.alt_text ?? null);
+        continue;
       }
+      // video / animated_gif: mirror the playable MP4 (rendered in the post) and
+      // the poster thumbnail. The thumbnail is used only for og:image — and as a
+      // visible fallback if the MP4 is missing (e.g. it exceeded the size cap).
+      const mp4 = this.bestMp4(m);
+      if (mp4) await mirror(mp4, m.type, m.alt_text ?? null); // source_type "video" | "animated_gif"
+      if (m.preview_image_url) await mirror(m.preview_image_url, `${m.type}_thumbnail`, m.alt_text ?? null);
     }
     return mirrored;
+  }
+
+  /**
+   * Inline Markdown/HTML for a thread section's media. Photos become images;
+   * videos become a <video> (poster = paired thumbnail). Poster thumbnails are
+   * never shown on their own (they serve og:image) unless their MP4 is missing.
+   */
+  private mediaMarkdownFor(rows: MediaRow[]): string {
+    const isThumb = (m: MediaRow) => /_thumbnail$/.test(m.source_type ?? "");
+    const isVideo = (m: MediaRow) => (m.mime_type ?? "").startsWith("video/");
+    const cleanAlt = (m: MediaRow) => (m.alt_text ?? "").replace(/[\[\]]/g, "");
+    const thumbs = rows.filter(isThumb);
+    const videoCount = rows.filter(isVideo).length;
+    let ti = 0;
+    const out: string[] = [];
+    for (const m of rows) {
+      if (isThumb(m)) continue;
+      if (isVideo(m)) {
+        const poster = thumbs[ti++];
+        const posterAttr = poster ? ` poster="${poster.public_url}"` : "";
+        const playback = m.source_type === "animated_gif" ? " autoplay loop muted playsinline" : " controls";
+        out.push(`\n<video src="${m.public_url}"${posterAttr}${playback} preload="metadata"></video>`);
+      } else if ((m.mime_type ?? "").startsWith("image/")) {
+        out.push(`\n![${cleanAlt(m)}](${m.public_url})`);
+      }
+    }
+    // Thumbnails whose MP4 failed to mirror: show them as fallback images.
+    for (let i = videoCount; i < thumbs.length; i++) out.push(`\n![${cleanAlt(thumbs[i]!)}](${thumbs[i]!.public_url})`);
+    return out.join("");
   }
 
   recordMetricsSnapshot(postId: string, tweet: XTweet): void {

@@ -3,7 +3,7 @@ import { config } from "../config/index.js";
 import { cache } from "../lib/cache.js";
 import { visitorHash } from "../lib/crypto.js";
 import { SORT_MODES, FILTER_MODES, type SortMode, type FilterMode } from "../modules/types.js";
-import { embedXReferences, quotedTweetId } from "../lib/x-embed.js";
+import { embedXReferences, quotedTweetId, quotedTweetUrl } from "../lib/x-embed.js";
 
 // Brand suffix used in page <title> tags. Prefers the X handle ("@desunit Blog")
 // and falls back to the configured site title.
@@ -237,6 +237,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
         ownUserId: account.x_user_id ?? "",
         ownUsername: account.username ?? "",
         quotedTweetId: quotedTweetId(post.x_raw_json),
+        quotedTweetUrl: quotedTweetUrl(post.x_raw_json),
         lookup: (tweetId) => {
           const ref = s.posts.getByXPostId(tweetId);
           if (!ref || ref.id === post.id) return null; // not ours / self-reference

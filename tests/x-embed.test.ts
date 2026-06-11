@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { embedXReferences, quotedTweetId, type XRefCard } from "../src/lib/x-embed.js";
+import { embedXReferences, quotedTweetId, quotedTweetUrl, type XRefCard } from "../src/lib/x-embed.js";
 import { config } from "../src/config/index.js";
 
 const OWN_ID = "25348232";
 const OWN_USER = "desunit";
 
-function run(html: string, archive: Record<string, XRefCard> = {}, quotedId?: string | null) {
+function run(html: string, archive: Record<string, XRefCard> = {}, quotedId?: string | null, quotedUrl?: string | null) {
   return embedXReferences(html, {
     ownUserId: OWN_ID,
     ownUsername: OWN_USER,
     quotedTweetId: quotedId,
+    quotedTweetUrl: quotedUrl,
     lookup: (id) => archive[id] ?? null,
   });
 }
@@ -72,9 +73,28 @@ describe("embedXReferences", () => {
     expect(html.indexOf("A new article today:")).toBeLessThan(html.indexOf("x-ref-card"));
   });
 
-  it("does not append a quote card when the quoted tweet is not in the archive", () => {
-    const { html } = run(`<p>text</p>`, {}, "555");
+  it("appends a live X widget for an external quoted tweet using its canonical URL", () => {
+    const url = "https://twitter.com/levelsio/status/555";
+    const { html, hasWidget } = run(`<p>my take</p>`, {}, "555", url);
+    expect(hasWidget).toBe(true);
     expect(html).not.toContain("x-ref-card");
+    expect(html).toContain('<blockquote class="twitter-tweet"');
+    expect(html).toContain(`href="${url}"`);
+    // widget comes after the body text
+    expect(html.indexOf("my take")).toBeLessThan(html.indexOf("twitter-tweet"));
+  });
+
+  it("does not append anything for an external quoted tweet with no canonical URL", () => {
+    const { html, hasWidget } = run(`<p>text</p>`, {}, "555");
+    expect(html).not.toContain("x-ref-card");
+    expect(html).not.toContain("twitter-tweet");
+    expect(hasWidget).toBe(false);
+  });
+
+  it("does not duplicate the widget when the body already embeds the quoted tweet", () => {
+    const url = "https://twitter.com/levelsio/status/555";
+    const { html } = run(`<p>see ${anchor(url, "x.com/…")}</p>`, {}, "555", url);
+    expect(html.match(/twitter-tweet/g)?.length).toBe(1);
   });
 
   it("does not duplicate the quote card when the body already links the quoted post", () => {
@@ -100,5 +120,35 @@ describe("quotedTweetId", () => {
     expect(quotedTweetId("")).toBeNull();
     expect(quotedTweetId("not json")).toBeNull();
     expect(quotedTweetId("{}")).toBeNull();
+  });
+});
+
+describe("quotedTweetUrl", () => {
+  it("prefers the entities.urls expanded URL that points at the quoted id", () => {
+    const raw = JSON.stringify({
+      referenced_tweets: [{ type: "quoted", id: "555" }],
+      entities: { urls: [{ expanded_url: "https://twitter.com/levelsio/status/555" }] },
+    });
+    expect(quotedTweetUrl(raw)).toBe("https://twitter.com/levelsio/status/555");
+  });
+
+  it("falls back to a handle-less permalink when no matching expanded URL exists", () => {
+    const raw = JSON.stringify({ referenced_tweets: [{ type: "quoted", id: "555" }] });
+    expect(quotedTweetUrl(raw)).toBe("https://x.com/i/status/555");
+  });
+
+  it("ignores expanded URLs for a different status", () => {
+    const raw = JSON.stringify({
+      referenced_tweets: [{ type: "quoted", id: "555" }],
+      entities: { urls: [{ expanded_url: "https://twitter.com/foo/status/999" }] },
+    });
+    expect(quotedTweetUrl(raw)).toBe("https://x.com/i/status/555");
+  });
+
+  it("returns null when the post is not a quote-tweet or json is invalid", () => {
+    expect(quotedTweetUrl(JSON.stringify({ referenced_tweets: [{ type: "replied_to", id: "1" }] }))).toBeNull();
+    expect(quotedTweetUrl(null)).toBeNull();
+    expect(quotedTweetUrl("not json")).toBeNull();
+    expect(quotedTweetUrl("{}")).toBeNull();
   });
 });

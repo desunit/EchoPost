@@ -149,7 +149,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
     reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
     reply.header(
       "Content-Security-Policy",
-      "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; frame-src https://www.youtube-nocookie.com https://www.youtube.com; frame-ancestors 'self'",
+      "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://platform.twitter.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://platform.twitter.com; frame-ancestors 'self'",
     );
 
     // slug redirects (PRD 5.13.2) — only for plain GET page requests.

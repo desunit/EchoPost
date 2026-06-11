@@ -36,6 +36,13 @@ export interface EmbedOptions {
    * posts, render it as a trailing quote card — matching X's quote-tweet layout.
    */
   quotedTweetId?: string | null;
+  /**
+   * Canonical URL of the quoted status (from the raw JSON's `entities.urls`).
+   * When the quoted tweet is *not* one of our archived posts, we append the live
+   * X widget pointing here instead — otherwise an external quote-tweet whose t.co
+   * link was stripped at import would render nothing.
+   */
+  quotedTweetUrl?: string | null;
 }
 
 function widgetHtml(href: string): string {
@@ -79,13 +86,19 @@ export function embedXReferences(html: string, opts: EmbedOptions): { html: stri
     return widgetHtml(href);
   });
 
-  // Quote-tweet: append a card for the quoted post unless the body already links it
-  // (e.g. the t.co URL survived stripping and was rendered as a card above).
+  // Quote-tweet: append a trailing embed for the quoted status. Own archived post
+  // → internal card; anyone else → live X widget. Skip when the body already links
+  // it (e.g. the t.co URL survived stripping and was rendered above).
   let withQuote = out;
   if (opts.quotedTweetId) {
     const card = opts.lookup(opts.quotedTweetId);
-    if (card && !out.includes(`"${config.basePath}/${card.slug}"`)) {
-      withQuote = out + cardHtml(card);
+    if (card) {
+      if (!out.includes(`"${config.basePath}/${card.slug}"`)) {
+        withQuote = out + cardHtml(card);
+      }
+    } else if (opts.quotedTweetUrl && !out.includes(`href="${escapeHtml(opts.quotedTweetUrl)}"`)) {
+      withQuote = out + widgetHtml(opts.quotedTweetUrl);
+      hasWidget = true;
     }
   }
 
@@ -102,6 +115,31 @@ export function quotedTweetId(rawJson: string | null | undefined): string | null
     const parsed = JSON.parse(rawJson) as { referenced_tweets?: { type: string; id: string }[] };
     const quoted = parsed.referenced_tweets?.find((r) => r.type === "quoted");
     return quoted?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Canonical URL of a post's quoted status, for the live X widget fallback. Prefers
+ * the `entities.urls` expanded URL that points at the quoted id (keeps the original
+ * author handle); falls back to a handle-less `x.com/i/status/<id>` permalink.
+ * Returns null when the post isn't a quote-tweet / has no raw JSON.
+ */
+export function quotedTweetUrl(rawJson: string | null | undefined): string | null {
+  if (!rawJson) return null;
+  try {
+    const parsed = JSON.parse(rawJson) as {
+      referenced_tweets?: { type: string; id: string }[];
+      entities?: { urls?: { expanded_url?: string }[] };
+    };
+    const quoted = parsed.referenced_tweets?.find((r) => r.type === "quoted");
+    if (!quoted) return null;
+    const match = parsed.entities?.urls?.find((u) => {
+      const m = u.expanded_url ? X_STATUS.exec(u.expanded_url) : null;
+      return !!m && m[2] === quoted.id;
+    });
+    return match?.expanded_url ?? `https://x.com/i/status/${quoted.id}`;
   } catch {
     return null;
   }

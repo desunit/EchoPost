@@ -163,6 +163,14 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   /* ---------- newsletter (PRD 5.9) ---------- */
   app.post("/subscribe", async (req, reply) => {
     const body = req.body as Record<string, string>;
+    if (!s.newsletter.checkRateLimit(req.ip)) {
+      reply.code(429);
+      return app.view(reply, "message", {
+        title: "Newsletter",
+        heading: "Too many attempts",
+        message: "Please wait a little while before trying again.",
+      });
+    }
     const result = await s.newsletter.subscribe(body.email ?? "", body.source ?? "homepage");
     return app.view(reply, "message", {
       title: "Newsletter",

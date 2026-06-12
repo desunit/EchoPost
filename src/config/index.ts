@@ -34,6 +34,29 @@ function listEnv(key: string): string[] {
   return env(key).split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+/**
+ * Parse the reverse-proxy trust setting that decides how `req.ip` is derived
+ * from `X-Forwarded-For`.
+ *
+ * SECURITY: `true` trusts the *entire* client-supplied XFF chain, so anyone can
+ * forge `req.ip` and defeat the admin IP allowlist and the login rate limiter.
+ * Prefer the number of trusted proxy hops in front of the app:
+ *   - ""        → 1   (default: a single reverse proxy, e.g. nginx/Caddy)
+ *   - "0"/"false" → false (app exposed directly — use the socket peer IP)
+ *   - "2"       → trust 2 hops
+ *   - "true"    → trust all hops (unsafe unless the proxy rewrites XFF)
+ *   - "10.0.0.0/8,192.168.0.0/16" → trust these proxy addresses/CIDRs
+ */
+export function parseTrustProxy(raw: string): boolean | number | string[] {
+  const v = raw.trim();
+  if (v === "") return 1;
+  const lower = v.toLowerCase();
+  if (lower === "false" || v === "0") return false;
+  if (lower === "true") return true;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 function hostOf(url: string): string | null {
   try {
     return url ? new URL(url).hostname : null;
@@ -75,6 +98,8 @@ export const config = {
   isProduction: env("NODE_ENV") === "production",
   port: intEnv("PORT", 3000),
   host: env("HOST", "0.0.0.0"),
+  // How much of X-Forwarded-For to trust when computing req.ip. See parseTrustProxy.
+  trustProxy: parseTrustProxy(env("TRUSTED_PROXY")),
   siteUrl,
   // URL path the app is mounted under (e.g. "/blog"); "" means root.
   basePath,

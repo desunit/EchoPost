@@ -3,6 +3,8 @@
 
 <h1>Settings</h1>
 
+<% if (it.error) { %><p class="warn"><%= it.error %></p><% } %>
+
 <form method="post" action="<%= it.base %>/admin/settings" class="post-form">
   <input type="hidden" name="_csrf" value="<%= it.csrf %>">
 
@@ -54,7 +56,10 @@
 
   <h2>Security</h2>
   <label>New admin password (leave blank to keep current)
-    <input type="password" name="new_admin_password" autocomplete="new-password">
+    <input type="password" name="new_admin_password" autocomplete="new-password" minlength="8">
+  </label>
+  <label>Current password (required to change the password above)
+    <input type="password" name="current_password" autocomplete="current-password">
   </label>
 
   <button type="submit">Save settings</button>

@@ -433,6 +433,30 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
   app.post("/admin/settings", async (req, reply) => {
     const body = req.body as Record<string, string>;
+
+    // A password change must re-verify the current password (so a stolen session
+    // can't silently take over the account) and meet the minimum length. Validate
+    // before applying any settings so a rejected change leaves everything unchanged.
+    const newPassword = body.new_admin_password?.trim();
+    if (newPassword) {
+      const renderError = (error: string) => {
+        reply.code(400);
+        return adminView(req, reply, "admin/settings", {
+          title: "Settings",
+          siteSettings: s.settings.getSiteSettings(),
+          importRules: s.settings.getImportRules(),
+          account: s.xAccount.get(),
+          error,
+        });
+      };
+      if (!s.auth.verifyCurrentPassword(body.current_password ?? "")) {
+        return renderError("Current password is incorrect — admin password unchanged.");
+      }
+      if (newPassword.length < 8) {
+        return renderError("New password must be at least 8 characters — admin password unchanged.");
+      }
+    }
+
     const current = s.settings.getSiteSettings();
     s.settings.setSiteSettings({
       ...current,
@@ -465,8 +489,8 @@ export function registerAdminRoutes(app: FastifyInstance): void {
       allowedLanguages: (body.allowed_languages ?? "").split(",").map((k) => k.trim()).filter(Boolean),
     });
 
-    if (body.new_admin_password?.trim()) {
-      s.auth.setAdminPassword(body.new_admin_password.trim());
+    if (newPassword) {
+      s.auth.setAdminPassword(newPassword);
       s.auth.audit("admin_password_changed");
     }
 

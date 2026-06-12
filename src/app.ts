@@ -63,15 +63,28 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       level: config.isProduction ? "info" : "debug",
       transport: config.isProduction ? undefined : { target: "pino-pretty" },
     },
-    trustProxy: true,
+    trustProxy: config.trustProxy,
     disableRequestLogging: config.isProduction,
   });
+
+  // Fail fast rather than silently falling back to ephemeral random secrets in
+  // production: those reset every restart, invalidating all sessions and making
+  // encrypted X OAuth tokens undecryptable.
+  if (config.isProduction) {
+    const missing = ["APP_ENCRYPTION_KEY", "SESSION_SECRET"].filter((k) => !process.env[k]?.trim());
+    if (missing.length) {
+      throw new Error(`Refusing to boot in production without: ${missing.join(", ")}`);
+    }
+  }
 
   const db = getDb();
   runMigrations(db);
 
   const auth = new AuthService(db);
   if (!auth.hasAdminPassword() && config.adminPassword) {
+    if (config.adminPassword.length < 8) {
+      app.log.warn("ADMIN_PASSWORD is shorter than 8 characters — set a stronger admin password");
+    }
     auth.setAdminPassword(config.adminPassword);
     app.log.info("admin password initialized from ADMIN_PASSWORD");
   }

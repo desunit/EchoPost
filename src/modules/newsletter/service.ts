@@ -24,6 +24,11 @@ export interface SubscriberRow {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+// Per-IP throttle on subscribe attempts, so the public form can't be abused to
+// blast confirmation emails at arbitrary addresses (joe-jobbing) or for resource
+// abuse. In-memory, mirroring the auth/AMA limiters.
+const subscribeAttempts = new Map<string, { count: number; resetAt: number }>();
+
 /** Double-opt-in newsletter flow (PRD 5.9). Tokens are stored hashed. */
 export class NewsletterService {
   private provider: EmailProvider;
@@ -42,6 +47,19 @@ export class NewsletterService {
 
   isValidEmail(email: string): boolean {
     return EMAIL_RE.test(email) && email.length <= 254;
+  }
+
+  /** True while under the per-key (IP) subscribe rate limit. */
+  checkRateLimit(key: string, max = 5, windowMs = 60 * 60_000): boolean {
+    const now = Date.now();
+    const bucket = subscribeAttempts.get(key);
+    if (!bucket || bucket.resetAt < now) {
+      subscribeAttempts.set(key, { count: 1, resetAt: now + windowMs });
+      return true;
+    }
+    if (bucket.count >= max) return false;
+    bucket.count++;
+    return true;
   }
 
   getByEmail(email: string): SubscriberRow | undefined {

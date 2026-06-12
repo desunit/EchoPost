@@ -42,6 +42,12 @@ export class AuthService {
     this.settings.set("admin_password_hash", hashPassword(password));
   }
 
+  /** Constant-time check of a candidate against the stored admin password. */
+  verifyCurrentPassword(password: string): boolean {
+    const hash = this.settings.get<string | null>("admin_password_hash", null);
+    return !!hash && verifyPassword(password, hash);
+  }
+
   checkRateLimit(ip: string, max = 10, windowMs = 15 * 60_000): boolean {
     const now = Date.now();
     const bucket = loginAttempts.get(ip);

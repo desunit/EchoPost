@@ -170,6 +170,25 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://platform.twitter.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://platform.twitter.com; frame-ancestors 'self'",
     );
 
+    // Trailing-slash normalization (301): WordPress permalinks end in "/", but
+    // imported slugs are stored without one, so "/slug/" would 404. Redirect to
+    // the canonical no-slash URL so old WP links and their SEO equity resolve.
+    // The site root (basePath + "/") keeps its slash; assets/media are untouched.
+    if (req.method === "GET") {
+      const qIdx = req.url.indexOf("?");
+      const path = qIdx === -1 ? req.url : req.url.slice(0, qIdx);
+      const query = qIdx === -1 ? "" : req.url.slice(qIdx);
+      if (
+        path.length > 1 &&
+        path.endsWith("/") &&
+        path !== `${config.basePath}/` &&
+        !path.startsWith(`${config.basePath}/assets`) &&
+        !path.startsWith(`${config.media.publicUrl}/`)
+      ) {
+        return reply.code(301).redirect(path.replace(/\/+$/, "") + query);
+      }
+    }
+
     // slug redirects (PRD 5.13.2) — only for plain GET page requests.
     // Redirects are stored as unprefixed slug paths (/old → /new); strip the
     // base path before lookup and re-add it on the way out.

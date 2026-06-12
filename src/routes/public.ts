@@ -157,7 +157,14 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const results = q
       ? s.search.search(q, ["relevance", "latest", "most_viewed", "x_views", "blog_views"].includes(sort) ? (sort as any) : "relevance")
       : [];
-    return app.view(reply, "search", { title: `Search — ${brand}`, q, sort, results });
+    return app.view(reply, "search", {
+      title: `Search — ${brand}`,
+      // Collapse ?q=/?sort= result pages onto the base search URL (avoid index bloat).
+      canonicalUrl: `${config.publicUrl}/search`,
+      q,
+      sort,
+      results,
+    });
   });
 
   /* ---------- newsletter (PRD 5.9) ---------- */

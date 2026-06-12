@@ -140,6 +140,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       site: {
         url: config.siteUrl,
         title: config.siteTitle,
+        brand: config.siteBrand,
         description: config.siteDescription,
         xUsername: config.x.username,
         ...siteSettings(),

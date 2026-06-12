@@ -5,9 +5,9 @@ import { visitorHash } from "../lib/crypto.js";
 import { SORT_MODES, FILTER_MODES, type SortMode, type FilterMode } from "../modules/types.js";
 import { embedXReferences, quotedTweetId, quotedTweetUrl } from "../lib/x-embed.js";
 
-// Brand suffix used in page <title> tags. Prefers the X handle ("@desunit Blog")
-// and falls back to the configured site title.
-const brand = config.x.username ? `@${config.x.username} Blog` : config.siteTitle;
+// Brand used for the homepage <h1> and the suffix in page <title> tags.
+// Configurable via SITE_BRAND; defaults to "@<handle> Blog" or the site title.
+const brand = config.siteBrand;
 
 function ownHost(): string {
   try {
@@ -74,6 +74,8 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     track(app, req, null);
     return app.view(reply, "home", {
       title: brand,
+      // Homepage shows the brand as its <h1>, so the nav site-name is suppressed.
+      isHome: true,
       // Self-referencing canonical (clean URL) collapses ?sort=/?filter= variants.
       canonicalUrl: `${config.publicUrl}/`,
       jsonLd: s.seo.siteJsonLd(brand, config.siteDescription),

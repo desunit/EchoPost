@@ -110,6 +110,10 @@ export const config = {
   links: { followHosts: followLinkHosts },
   siteTitle: env("SITE_TITLE", "EchoPost"),
   siteDescription: env("SITE_DESCRIPTION", "Personal content archive and X mirror"),
+  // Brand shown as the homepage <h1> and the suffix in page <title> tags.
+  // Defaults to "@<handle> Blog" (or SITE_TITLE when no X handle is set), so set
+  // SITE_BRAND to override it with a name like "Sergey Bogdanov".
+  siteBrand: env("SITE_BRAND") || (env("X_USERNAME") ? `@${env("X_USERNAME")} Blog` : env("SITE_TITLE", "EchoPost")),
 
   databasePath: path.resolve(root, env("DATABASE_PATH", "./data/echopost.db")),
 

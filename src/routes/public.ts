@@ -74,6 +74,9 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     track(app, req, null);
     return app.view(reply, "home", {
       title: brand,
+      // Self-referencing canonical (clean URL) collapses ?sort=/?filter= variants.
+      canonicalUrl: `${config.publicUrl}/`,
+      jsonLd: s.seo.siteJsonLd(brand, config.siteDescription),
       sort,
       filter,
       sortModes: SORT_MODES,
@@ -85,7 +88,11 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   /* ---------- tags ---------- */
   app.get("/tags", async (req, reply) => {
     const tags = cache.getOrCompute("tags", 5 * 60_000, () => s.tags.listWithCounts());
-    return app.view(reply, "tags", { title: `Tags — ${brand}`, tags });
+    return app.view(reply, "tags", {
+      title: `Tags — ${brand}`,
+      canonicalUrl: `${config.publicUrl}/tags`,
+      tags,
+    });
   });
 
   app.get("/tag/:slug", async (req, reply) => {
@@ -102,6 +109,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const posts = s.tags.postsForTag(tag.id);
     return app.view(reply, "tag", {
       title: `${tag.name} — ${brand}`,
+      canonicalUrl: `${config.publicUrl}/tag/${tag.slug}`,
       tag,
       posts,
       groups: groupByYear(posts),
@@ -121,7 +129,11 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   app.get("/stats", async (req, reply) => {
     const stats = s.stats.build();
     track(app, req, null);
-    return app.view(reply, "stats", { title: `Stats — ${brand}`, stats });
+    return app.view(reply, "stats", {
+      title: `Stats — ${brand}`,
+      canonicalUrl: `${config.publicUrl}/stats`,
+      stats,
+    });
   });
 
   /* ---------- feeds + SEO ---------- */
@@ -262,7 +274,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     return app.view(reply, "post", {
       title: post.seo_title || `${post.title} — ${brand}`,
       post,
-      jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName),
+      jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName, data.ogImage),
       canonicalUrl: post.canonical_url || `${config.publicUrl}/${post.slug}`,
       ...data,
     });

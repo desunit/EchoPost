@@ -10,7 +10,7 @@
   <meta property="og:description" content="<%= it.metaDescription || it.site.description %>">
   <meta property="og:type" content="<%= it.ogType || 'website' %>">
   <% if (it.canonicalUrl) { %><meta property="og:url" content="<%= it.canonicalUrl %>"><% } %>
-  <% if (it.ogImage) { %><meta property="og:image" content="<%= it.ogImage %>"><% } %>
+  <meta property="og:image" content="<%= it.ogImage || it.defaultOgImage %>">
   <meta name="twitter:card" content="<%= it.ogImage ? 'summary_large_image' : 'summary' %>">
   <link rel="icon" type="image/jpeg" sizes="32x32" href="<%= it.base %>/assets/favicon-32x32.jpg">
   <link rel="icon" type="image/jpeg" sizes="192x192" href="<%= it.base %>/assets/favicon-192x192.jpg">

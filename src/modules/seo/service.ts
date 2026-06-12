@@ -27,13 +27,14 @@ export class SeoService {
 
       const tags = this.db
         .prepare(
-          `SELECT DISTINCT t.slug FROM tags t
+          `SELECT t.slug, MAX(p.updated_at) AS lastmod FROM tags t
            JOIN post_tags pt ON pt.tag_id = t.id
-           JOIN posts p ON p.id = pt.post_id AND p.status = 'published' AND p.deleted_at IS NULL`,
+           JOIN posts p ON p.id = pt.post_id AND p.status = 'published' AND p.deleted_at IS NULL
+           GROUP BY t.slug`,
         )
-        .all() as Array<{ slug: string }>;
+        .all() as Array<{ slug: string; lastmod: string | null }>;
       for (const t of tags) {
-        urls.push({ loc: `${config.publicUrl}/tag/${t.slug}` });
+        urls.push({ loc: `${config.publicUrl}/tag/${t.slug}`, lastmod: t.lastmod?.slice(0, 10) });
       }
 
       const entries = urls
@@ -67,19 +68,46 @@ Sitemap: ${config.publicUrl}/sitemap.xml
       | undefined;
   }
 
-  jsonLd(post: PostRow, authorName: string): string {
+  jsonLd(post: PostRow, authorName: string, image?: string): string {
+    const url = `${config.publicUrl}/${post.slug}`;
     const data = {
       "@context": "https://schema.org",
-      "@type": "Article",
+      "@type": post.type === "blog" ? "BlogPosting" : "Article",
       headline: post.title,
       datePublished: post.published_at,
       dateModified: post.updated_at,
-      author: { "@type": "Person", name: authorName },
-      mainEntityOfPage: `${config.publicUrl}/${post.slug}`,
+      author: { "@type": "Person", name: authorName, url: config.publicUrl + "/" },
+      publisher: { "@type": "Person", name: authorName },
+      mainEntityOfPage: url,
+      url,
+      ...(image ? { image: [image] } : {}),
       description: post.seo_description ?? post.excerpt ?? "",
       wordCount: post.word_count,
     };
     // </script> can't appear inside a JSON-LD block
+    return JSON.stringify(data).replace(/</g, "\\u003c");
+  }
+
+  /** WebSite (with sitelinks SearchAction) + Blog markup for the homepage. */
+  siteJsonLd(name: string, description: string): string {
+    const home = `${config.publicUrl}/`;
+    const data = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          name,
+          description,
+          url: home,
+          potentialAction: {
+            "@type": "SearchAction",
+            target: { "@type": "EntryPoint", urlTemplate: `${config.publicUrl}/search?q={search_term_string}` },
+            "query-input": "required name=search_term_string",
+          },
+        },
+        { "@type": "Blog", name, description, url: home },
+      ],
+    };
     return JSON.stringify(data).replace(/</g, "\\u003c");
   }
 }

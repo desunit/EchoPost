@@ -1,6 +1,8 @@
 <% layout("layout") %>
 
 <section class="masthead">
+  <h1><% if (it.site.xUsername) { %>@<%= it.site.xUsername %> Blog<% } else { %><%= it.site.title %><% } %></h1>
+  <% if (it.site.description) { %><p><%= it.site.description %></p><% } %>
   <span class="count-line"><%= it.count %> posts in the archive<% if (it.grouped && it.groups.length > 0) { %> · since <%= it.groups[it.groups.length - 1].year %><% } %></span>
 </section>
 

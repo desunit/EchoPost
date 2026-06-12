@@ -134,6 +134,10 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       // URL prefix for all internal page/feed/admin links (empty at root).
       // Static assets (/assets, /media) are served at root and never prefixed.
       base: config.basePath,
+      // Absolute origin+basePath, for canonical/OG URLs in templates.
+      publicUrl: config.publicUrl,
+      // Sitewide fallback social card when a page has no content image.
+      defaultOgImage: `${config.publicUrl}/assets/favicon-192x192.jpg`,
       formatDate,
       formatDateShort,
       formatNumber,

@@ -77,6 +77,21 @@ const root = process.cwd();
 const siteUrl = env("SITE_URL", "http://localhost:3000").replace(/\/$/, "");
 const basePath = normalizeBasePath(env("BASE_PATH"));
 
+// Branding. Three knobs, decoupled so each can be set independently:
+//   - siteBrand: the homepage <h1> (and homepage <title>) — e.g. "Sergey Bogdanov"
+//   - pageTitleBrand: the brand token in inner page <title> tags ("Tags — <brand>")
+// siteTitleEnv is the raw SITE_TITLE (empty when unset) so we can tell "set" apart
+// from the "EchoPost" default.
+const siteTitleEnv = env("SITE_TITLE");
+const siteTitle = siteTitleEnv || "EchoPost";
+const xUsername = env("X_USERNAME");
+// Precedence: explicit SITE_BRAND, then SITE_TITLE, then the auto-derived
+// "@<handle> Blog", then the "EchoPost" default. SITE_TITLE intentionally beats
+// the X-handle derivation so setting it alone changes the brand everywhere.
+const siteBrand = env("SITE_BRAND") || siteTitleEnv || (xUsername ? `@${xUsername} Blog` : "EchoPost");
+// Inner pages use SITE_TITLE when explicitly set, else fall back to the brand.
+const pageTitleBrand = siteTitleEnv || siteBrand;
+
 const wordpressUrl = env("WORDPRESS_URL").replace(/\/$/, "");
 // The WordPress site host plus any CDN/upload hosts must be allowlisted before
 // MediaService will mirror their images (SSRF guard). Derived from WORDPRESS_URL
@@ -108,12 +123,14 @@ export const config = {
   publicUrl: siteUrl + basePath,
   // Link rel policy for rendered content: hosts that stay "follow".
   links: { followHosts: followLinkHosts },
-  siteTitle: env("SITE_TITLE", "EchoPost"),
+  siteTitle,
   siteDescription: env("SITE_DESCRIPTION", "Personal content archive and X mirror"),
-  // Brand shown as the homepage <h1> and the suffix in page <title> tags.
-  // Defaults to "@<handle> Blog" (or SITE_TITLE when no X handle is set), so set
-  // SITE_BRAND to override it with a name like "Sergey Bogdanov".
-  siteBrand: env("SITE_BRAND") || (env("X_USERNAME") ? `@${env("X_USERNAME")} Blog` : env("SITE_TITLE", "EchoPost")),
+  // Homepage <h1> / <title>. Defaults to "@<handle> Blog" (or SITE_TITLE when no X
+  // handle is set); set SITE_BRAND to override with a name like "Sergey Bogdanov".
+  siteBrand,
+  // Brand token in inner page <title> tags ("Tags — <brand>"). Prefers SITE_TITLE
+  // when set, else falls back to siteBrand.
+  pageTitleBrand,
 
   databasePath: path.resolve(root, env("DATABASE_PATH", "./data/echopost.db")),
 
@@ -131,7 +148,7 @@ export const config = {
     clientSecret: env("X_CLIENT_SECRET"),
     bearerToken: env("X_BEARER_TOKEN"),
     redirectUri: env("X_REDIRECT_URI"),
-    username: env("X_USERNAME"),
+    username: xUsername,
     apiBase: env("X_API_BASE", "https://api.x.com/2"),
     // How many older posts each historical backfill batch imports.
     backfillBatchSize: intEnv("X_BACKFILL_BATCH_SIZE", 100),

@@ -5,9 +5,10 @@ import { visitorHash } from "../lib/crypto.js";
 import { SORT_MODES, FILTER_MODES, type SortMode, type FilterMode } from "../modules/types.js";
 import { embedXReferences, quotedTweetId, quotedTweetUrl } from "../lib/x-embed.js";
 
-// Brand used for the homepage <h1> and the suffix in page <title> tags.
-// Configurable via SITE_BRAND; defaults to "@<handle> Blog" or the site title.
+// Homepage <h1> / <title> brand (SITE_BRAND), and the brand appended to inner
+// page <title> tags (SITE_TITLE, falling back to the brand).
 const brand = config.siteBrand;
+const titleSuffix = config.pageTitleBrand;
 
 function ownHost(): string {
   try {
@@ -91,7 +92,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   app.get("/tags", async (req, reply) => {
     const tags = cache.getOrCompute("tags", 5 * 60_000, () => s.tags.listWithCounts());
     return app.view(reply, "tags", {
-      title: `Tags — ${brand}`,
+      title: `Tags — ${titleSuffix}`,
       canonicalUrl: `${config.publicUrl}/tags`,
       tags,
     });
@@ -110,7 +111,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     }
     const posts = s.tags.postsForTag(tag.id);
     return app.view(reply, "tag", {
-      title: `${tag.name} — ${brand}`,
+      title: `${tag.name} — ${titleSuffix}`,
       canonicalUrl: `${config.publicUrl}/tag/${tag.slug}`,
       tag,
       posts,
@@ -124,7 +125,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     if (!tag) return reply.callNotFound();
     return reply
       .type("application/rss+xml; charset=utf-8")
-      .send(s.rss.build({ tagSlug: slug, title: `${tag.name} — ${brand}` }));
+      .send(s.rss.build({ tagSlug: slug, title: `${tag.name} — ${titleSuffix}` }));
   });
 
   /* ---------- stats (PRD 5.11) ---------- */
@@ -132,7 +133,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const stats = s.stats.build();
     track(app, req, null);
     return app.view(reply, "stats", {
-      title: `Stats — ${brand}`,
+      title: `Stats — ${titleSuffix}`,
       canonicalUrl: `${config.publicUrl}/stats`,
       stats,
     });
@@ -143,10 +144,10 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     reply.type("application/rss+xml; charset=utf-8").send(s.rss.build()),
   );
   app.get("/rss/x", async (_req, reply) =>
-    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "x_post", title: `X posts — ${brand}` })),
+    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "x_post", title: `X posts — ${titleSuffix}` })),
   );
   app.get("/rss/blog", async (_req, reply) =>
-    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "blog", title: `Blog — ${brand}` })),
+    reply.type("application/rss+xml; charset=utf-8").send(s.rss.build({ type: "blog", title: `Blog — ${titleSuffix}` })),
   );
   app.get("/sitemap.xml", async (_req, reply) =>
     reply.type("application/xml; charset=utf-8").send(s.seo.sitemap()),
@@ -160,7 +161,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       ? s.search.search(q, ["relevance", "latest", "most_viewed", "x_views", "blog_views"].includes(sort) ? (sort as any) : "relevance")
       : [];
     return app.view(reply, "search", {
-      title: `Search — ${brand}`,
+      title: `Search — ${titleSuffix}`,
       // Collapse ?q=/?sort= result pages onto the base search URL (avoid index bloat).
       canonicalUrl: `${config.publicUrl}/search`,
       q,
@@ -213,7 +214,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
   /* ---------- AMA (PRD 5.15) ---------- */
   app.get("/ama", async (req, reply) => {
     if (!s.ama.isEnabled()) return reply.callNotFound();
-    return app.view(reply, "ama", { title: `Ask my archive — ${brand}`, answer: null, question: "", sources: [] });
+    return app.view(reply, "ama", { title: `Ask my archive — ${titleSuffix}`, answer: null, question: "", sources: [] });
   });
 
   app.post("/ama", async (req, reply) => {
@@ -225,7 +226,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const key = visitorHash(req.ip, req.headers["user-agent"] ?? "", new Date().toISOString().slice(0, 10));
     if (!s.ama.checkRateLimit(key)) {
       return app.view(reply, "ama", {
-        title: `Ask my archive — ${brand}`,
+        title: `Ask my archive — ${titleSuffix}`,
         question,
         answer: "Rate limit reached — please try again in an hour.",
         sources: [],
@@ -234,7 +235,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     const result = await s.ama.ask(question);
     s.auth.audit("ama_question", { length: question.length });
     return app.view(reply, "ama", {
-      title: `Ask my archive — ${brand}`,
+      title: `Ask my archive — ${titleSuffix}`,
       question,
       answer: result.answer,
       sources: result.sources,
@@ -289,7 +290,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     });
 
     return app.view(reply, "post", {
-      title: post.seo_title || `${post.title} — ${brand}`,
+      title: post.seo_title || `${post.title} — ${titleSuffix}`,
       post,
       jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName, data.ogImage),
       canonicalUrl: post.canonical_url || `${config.publicUrl}/${post.slug}`,

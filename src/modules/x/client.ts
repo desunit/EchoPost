@@ -32,6 +32,17 @@ export interface XTweet {
     text: string;
     entities?: { urls?: Array<{ url: string; expanded_url?: string; display_url?: string }> };
   };
+  // Present when this post is a long-form X Article (Premium+). The timeline
+  // tweet's own `text` is just the t.co link to the Article; the real content
+  // lives here. `plain_text` is the full body, `preview_text` a truncated
+  // excerpt, `title` the author-given headline, `cover_media` a media key.
+  article?: {
+    title?: string;
+    plain_text?: string;
+    preview_text?: string;
+    cover_media?: string;
+    [k: string]: unknown;
+  };
 }
 
 export interface XMedia {
@@ -73,7 +84,7 @@ export class XRateLimitError extends Error {
 export class XAuthError extends Error {}
 
 const TWEET_FIELDS =
-  "created_at,public_metrics,entities,referenced_tweets,conversation_id,lang,possibly_sensitive,author_id,attachments,in_reply_to_user_id,note_tweet";
+  "created_at,public_metrics,entities,referenced_tweets,conversation_id,lang,possibly_sensitive,author_id,attachments,in_reply_to_user_id,note_tweet,article";
 const MEDIA_FIELDS = "url,preview_image_url,width,height,alt_text,type,duration_ms,variants";
 
 /**
@@ -122,7 +133,7 @@ export class XClient {
       max_results: String(Math.min(100, Math.max(5, maxResults))),
       "tweet.fields": TWEET_FIELDS,
       "media.fields": MEDIA_FIELDS,
-      expansions: "attachments.media_keys",
+      expansions: "attachments.media_keys,article.cover_media",
     };
     if (sinceId) params.since_id = sinceId;
 
@@ -155,7 +166,7 @@ export class XClient {
       max_results: String(Math.min(100, Math.max(5, maxResults))),
       "tweet.fields": TWEET_FIELDS,
       "media.fields": MEDIA_FIELDS,
-      expansions: "attachments.media_keys",
+      expansions: "attachments.media_keys,article.cover_media",
     };
     if (untilId) params.until_id = untilId;
     if (paginationToken) params.pagination_token = paginationToken;
@@ -183,7 +194,7 @@ export class XClient {
         ids: ids.slice(0, 100).join(","),
         "tweet.fields": fields,
         "media.fields": MEDIA_FIELDS,
-        expansions: "attachments.media_keys",
+        expansions: "attachments.media_keys,article.cover_media",
       },
       accessToken,
     );
@@ -202,7 +213,7 @@ export class XClient {
       max_results: "100",
       "tweet.fields": TWEET_FIELDS,
       "media.fields": MEDIA_FIELDS,
-      expansions: "attachments.media_keys",
+      expansions: "attachments.media_keys,article.cover_media",
     });
     const media = new Map<string, XMedia>();
     for (const m of data.includes?.media ?? []) media.set(m.media_key, m as XMedia);

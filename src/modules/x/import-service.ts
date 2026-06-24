@@ -147,6 +147,17 @@ export class XImportService {
       mirrored += rows.length;
     }
 
+    // Re-mirror an Article's cover image (lives in article.cover_media, not in
+    // attachments) and restore it as the post's og:image / lead cover.
+    const root = byId.get(post.x_post_id);
+    if (root?.article) {
+      const cover = await this.mirrorArticleCover(postId, root, media);
+      if (cover) {
+        this.posts.update(postId, { ogImageMediaId: cover.id });
+        mirrored += 1;
+      }
+    }
+
     invalidateContentCaches();
     return { tweets: tweets.length, mirrored };
   }
@@ -238,6 +249,21 @@ export class XImportService {
 
     if (isRepost && !rules.importReposts) return "skipped";
 
+    // X long-form Articles (Premium+) arrive as ordinary timeline tweets that
+    // carry an `article` object. They're original long-form content, so they
+    // bypass the thread/reply/quote routing and the minimum-character gate (the
+    // substance is the Article body, not the short timeline blurb whose length
+    // would otherwise fail the gate). Only language and blocked-keyword rules
+    // still apply.
+    if (tweet.article) {
+      // The language filter is skipped for Articles: the tweet's own `lang` is
+      // "zxx" (no linguistic content) because its text is just the article URL,
+      // so it can't be matched against allowedLanguages. Blocked keywords still apply.
+      const haystack = this.articleFullText(tweet).toLowerCase();
+      if (rules.blockedKeywords.some((k) => k && haystack.includes(k.toLowerCase()))) return "skipped";
+      return this.importStandalone(tweet, mediaMap, rules, ownUserId, opts);
+    }
+
     // Thread continuation: a self-reply to the author's OWN previous tweet in a
     // conversation we track. Replies to other people's comments in the same
     // conversation (in_reply_to_user_id !== own) are not part of the article.
@@ -287,14 +313,17 @@ export class XImportService {
   ): Promise<"imported"> {
     const account = this.accounts.get();
     const sourceUrl = `https://x.com/${account.username ?? "i"}/status/${tweet.id}`;
-    const markdown = this.tweetToMarkdown(tweet);
+    const isArticle = !!tweet.article;
+    const markdown = isArticle ? this.articleToMarkdown(tweet) : this.tweetToMarkdown(tweet);
 
     const existingTagNames = (this.db.prepare("SELECT name FROM tags").all() as any[]).map((r) => r.name);
     const site = this.settings.getSiteSettings();
-    const fullText = tweetText(tweet);
+    const fullText = isArticle ? this.articleFullText(tweet) : tweetText(tweet);
 
-    // Heuristic metadata is the baseline; an LLM enhances it when configured.
-    let title = generateTitle(fullText);
+    // For Articles the author-given title is canonical; otherwise derive a title
+    // heuristically. Either way an LLM may enhance the SEO description and tags.
+    const articleTitle = tweet.article?.title?.trim();
+    let title = articleTitle || generateTitle(fullText);
     let seoDescription = generateSeoDescription(fullText);
     let tagNames = generateTags(fullText, { existingTags: existingTagNames, vocabulary: site.controlledTagVocabulary });
     if (this.metadata) {
@@ -304,7 +333,8 @@ export class XImportService {
           existingTags: existingTagNames,
           vocabulary: site.controlledTagVocabulary,
         });
-        if (m.title) title = m.title;
+        // Don't let the LLM overwrite an Article's real, author-given title.
+        if (m.title && !articleTitle) title = m.title;
         if (m.seoDescription) seoDescription = m.seoDescription;
         if (m.tags.length > 0) tagNames = m.tags;
       } catch (err) {
@@ -328,7 +358,10 @@ export class XImportService {
     const post = this.posts.create({
       title,
       slug,
-      type: "x_post",
+      // X long-form Articles are native blog articles, not short X posts — they
+      // get the "blog" treatment (cover image, BlogPosting schema, archive),
+      // while retaining their X provenance (x_post_id, source_url, metrics).
+      type: isArticle ? "blog" : "x_post",
       // sensitive posts always land as draft (PRD 5.2.4); others review or auto-publish
       status: tweet.possibly_sensitive ? "draft" : autoPublish ? "published" : "review",
       // Publication date is always the original tweet's date, so the archive
@@ -350,6 +383,13 @@ export class XImportService {
     if (tagNames.length > 0) this.tags.setPostTags(post.id, tagNames, "auto");
 
     await this.mirrorTweetMedia(post.id, tweet, mediaMap);
+    // An Article's cover image lives in `article.cover_media` (resolved via the
+    // article.cover_media expansion), not in attachments — mirror it and use it
+    // as the post's lead/og:image so it renders above the body.
+    if (isArticle) {
+      const cover = await this.mirrorArticleCover(post.id, tweet, mediaMap);
+      if (cover) this.posts.update(post.id, { ogImageMediaId: cover.id });
+    }
     this.recordMetricsSnapshot(post.id, tweet);
     this.posts.syncSearchIndex(this.posts.getById(post.id)!);
     return "imported";
@@ -412,6 +452,63 @@ export class XImportService {
     } catch {
       return {};
     }
+  }
+
+  /**
+   * Full body of an X Article. `plain_text` is the complete article; we fall
+   * back to the (truncated) `preview_text`, and finally to the tweet's own text
+   * (which for an Article is only the t.co link). Article bodies use single
+   * newlines between paragraphs, so they're promoted to blank-line breaks for
+   * Markdown. Imported Articles land in the review queue for a final pass.
+   */
+  private articleBodyText(tweet: XTweet): string {
+    const a = tweet.article;
+    const raw = (typeof a?.plain_text === "string" && a.plain_text) || (typeof a?.preview_text === "string" && a.preview_text) || "";
+    return raw.trim();
+  }
+
+  private articleToMarkdown(tweet: XTweet): string {
+    const body = this.articleBodyText(tweet);
+    if (!body) return this.tweetToMarkdown(tweet);
+    // Article paragraphs are separated by single newlines; Markdown needs blank
+    // lines between them to render as distinct paragraphs.
+    return body.split(/\n+/).map((p) => p.trim()).filter(Boolean).join("\n\n");
+  }
+
+  /**
+   * Mirror an Article's cover image. The cover's media key (`article.cover_media`)
+   * is resolved into the includes media map by the `article.cover_media`
+   * expansion; mirror it as sort_order 0 so it leads the post's media. Returns
+   * the new row, or null when there's no cover or the mirror fails (non-fatal).
+   */
+  private async mirrorArticleCover(
+    postId: string,
+    tweet: XTweet,
+    mediaMap: Map<string, XMedia>,
+  ): Promise<MediaRow | null> {
+    const key = tweet.article?.cover_media;
+    if (!key) return null;
+    const m = mediaMap.get(key);
+    if (!m?.url) return null;
+    try {
+      return await this.media.mirrorRemote({
+        postId,
+        sourceUrl: m.url,
+        sourceType: "image",
+        altText: m.alt_text ?? null,
+        sortOrder: 0,
+      });
+    } catch (err) {
+      this.log.warn({ err, postId }, "x import: article cover mirror failed");
+      return null;
+    }
+  }
+
+  /** Article text for metadata heuristics / filtering: title plus body. */
+  private articleFullText(tweet: XTweet): string {
+    const title = tweet.article?.title?.trim() ?? "";
+    const body = this.articleBodyText(tweet) || tweetText(tweet);
+    return `${title}\n\n${body}`.trim();
   }
 
   /** Convert tweet text to markdown: expand t.co links, strip trailing media URLs. */

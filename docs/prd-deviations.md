@@ -70,6 +70,25 @@ Deliberate deviations from the PRD, chosen to keep the build dependency-light an
   endpoint (which returns `note_tweet` reliably) before importing, for both
   forward sync and backfill. A rate-limit during enrichment reschedules the
   job rather than persisting truncated text.
+- **X long-form Articles**: native X Articles (Premium+) arrive in the
+  timeline as ordinary tweets carrying an `article` object (requested via the
+  `article` tweet field). The importer treats them as original long-form
+  content: they bypass the thread/reply/quote routing and the
+  minimum-character gate (the timeline tweet's own text is only the t.co link
+  to the Article, which would otherwise fail the gate). The blocked-keyword
+  rule still applies; the **language filter is skipped** because an Article
+  tweet's `lang` is `zxx` ("no linguistic content") and can't be matched
+  against `allowedLanguages`. The body comes from `article.plain_text` (full),
+  falling back to `article.preview_text` (truncated) and finally the tweet
+  text; single newlines are promoted to blank-line paragraph breaks for
+  Markdown. The author-given `article.title` is canonical and is not
+  overwritten by LLM metadata. Articles are imported as native **`type: "blog"`**
+  posts (cover image, BlogPosting schema, archive treatment) while retaining
+  their X provenance (`x_post_id`, `source_url`, metric snapshots, "Originally
+  posted on X" attribution). The cover image (`article.cover_media`) is mirrored
+  via the `article.cover_media` expansion and set as the post's
+  `og_image_media_id` so it renders as the lead cover; `refetchMedia` restores
+  it too. Articles land in the **review** queue like other forward-sync posts.
 - **Thread-continuation filtering**: only a self-reply to the author's *own*
   previous tweet (`in_reply_to_user_id === own`) is folded into the article;
   replies to other people's comments in the conversation are skipped. A

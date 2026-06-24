@@ -132,6 +132,47 @@ describe("X import pipeline", () => {
     expect(post.markdown_body).not.toContain("t.co/selfphoto");
   });
 
+  it("imports an X long-form Article using its title and body, bypassing the length gate", async () => {
+    // The timeline tweet for an Article is just a short blurb (below the 100-char
+    // minimum); the real content lives in the `article` object.
+    client.timeline = [
+      tweet({
+        id: "950",
+        text: "https://t.co/abc123", // tweet text is only the article link
+        lang: "zxx",
+        article: {
+          title: "How I Built EchoPost",
+          plain_text: "First paragraph of the article body.\nSecond paragraph with more detail about the architecture.",
+          preview_text: "First paragraph of the article body.",
+        },
+      }),
+    ];
+    const summary = await importer.runImport();
+    expect(summary.imported).toBe(1);
+
+    const post = posts.getByXPostId("950")!;
+    expect(post.status).toBe("review");
+    expect(post.type).toBe("blog"); // Articles import as native blog articles, not x_post
+    expect(post.title).toBe("How I Built EchoPost");
+    expect(post.slug).toBe("how-i-built-echopost");
+    expect(post.markdown_body).toContain("First paragraph of the article body.");
+    expect(post.markdown_body).toContain("Second paragraph");
+    // single newlines promoted to blank-line paragraph breaks; the bare link is gone
+    expect(post.markdown_body).toContain("\n\n");
+    expect(post.markdown_body).not.toContain("t.co/abc123");
+  });
+
+  it("imports an Article even when allowedLanguages is set (tweet lang is zxx)", async () => {
+    db.prepare("INSERT INTO settings (key, value_json, updated_at) VALUES ('import_rules', ?, '')").run(
+      JSON.stringify({ blockedKeywords: [], minimumCharacterCount: 100, importReplies: false, importReposts: false, importQuotes: true, combineThreads: true, autoPublishStandalonePosts: false, autoPublishAfterMinutes: 0, allowedLanguages: ["en"] }),
+    );
+    client.timeline = [
+      tweet({ id: "953", text: "https://t.co/x", lang: "zxx", article: { title: "An Article", plain_text: "Body text here." } }),
+    ];
+    const summary = await importer.runImport();
+    expect(summary.imported).toBe(1);
+  });
+
   it("ignores replies and reposts by default", async () => {
     client.timeline = [
       tweet({ id: "101", referenced_tweets: [{ type: "replied_to", id: "999" }], conversation_id: "999" }),
@@ -372,6 +413,18 @@ describe("X import pipeline", () => {
       expect(post.seo_description).toBe("An LLM-written meta description.");
       expect(post.slug).toBe("a-crisp-llm-headline");
       expect(tagNamesFor(post.id).sort()).toEqual(["appfigures", "mcp"]);
+    });
+
+    it("keeps an Article's author-given title even when an LLM provider is configured", async () => {
+      const provider = {
+        generate: async () => ({ title: "LLM Override Title", seoDescription: "meta", tags: [] }),
+      };
+      const llmImporter = new XImportService(db, client as any, log, provider);
+      client.timeline = [
+        tweet({ id: "952", text: "https://t.co/y", article: { title: "Real Article Title", plain_text: "A long enough article body." } }),
+      ];
+      await llmImporter.runImport();
+      expect(posts.getByXPostId("952")!.title).toBe("Real Article Title");
     });
 
     it("falls back to heuristic metadata when the LLM provider fails", async () => {

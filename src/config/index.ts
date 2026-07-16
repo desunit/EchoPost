@@ -154,6 +154,19 @@ export const config = {
     backfillBatchSize: intEnv("X_BACKFILL_BATCH_SIZE", 100),
   },
 
+  indexNow: {
+    // Ownership key served at `${publicUrl}/<key>.txt`. Optional: when unset a
+    // key is generated once and persisted in the settings table, so it stays
+    // stable across restarts.
+    key: env("INDEXNOW_KEY"),
+    // Pings are on in production by default. INDEXNOW_ENABLED=true/false
+    // overrides (true to test against a fake endpoint locally, false to opt out).
+    enabled: env("INDEXNOW_ENABLED", env("NODE_ENV") === "production" ? "true" : "false") === "true",
+    // The api.indexnow.org endpoint shares submissions with all participating
+    // engines (Bing, Yandex, Seznam, Naver, …) — one ping covers them all.
+    endpoint: env("INDEXNOW_ENDPOINT", "https://api.indexnow.org/indexnow"),
+  },
+
   wordpress: {
     // Base URL of the WordPress site to import from, e.g. https://blog.example.com.
     url: wordpressUrl,

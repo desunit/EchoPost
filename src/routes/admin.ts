@@ -182,7 +182,10 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     const post = s.posts.create(postInputFromBody(body));
     s.tags.setPostTags(post.id, (body.tags ?? "").split(","));
     s.posts.syncSearchIndex(s.posts.getById(post.id)!);
-    if (post.status === "published") s.related.recalculateForPost(post.id);
+    if (post.status === "published") {
+      s.related.recalculateForPost(post.id);
+      s.indexNow.submit([`/${post.slug}`]);
+    }
     s.auth.audit("post_create", { title: post.title }, "post", post.id);
     return reply.redirect(bp + `/admin/posts/${post.id}`);
   });
@@ -215,7 +218,13 @@ export function registerAdminRoutes(app: FastifyInstance): void {
     const post = s.posts.update(id, input);
     s.tags.setPostTags(id, (body.tags ?? "").split(","));
     s.posts.syncSearchIndex(s.posts.getById(id)!);
-    if (post.status === "published") s.related.recalculateForPost(id);
+    if (post.status === "published") {
+      s.related.recalculateForPost(id);
+      // ping the new URL — plus the old one when the slug changed (it now 301s)
+      s.indexNow.submit(
+        existing && existing.slug !== post.slug ? [`/${post.slug}`, `/${existing.slug}`] : [`/${post.slug}`],
+      );
+    }
     s.auth.audit("post_update", { title: post.title }, "post", id);
     return reply.redirect(bp + `/admin/posts/${id}`);
   });
@@ -280,8 +289,11 @@ export function registerAdminRoutes(app: FastifyInstance): void {
   ] as const) {
     app.post(`/admin/posts/:id/${action}`, async (req, reply) => {
       const { id } = req.params as { id: string };
-      s.posts.setStatus(id, status);
-      if (status === "published") s.related.recalculateForPost(id);
+      const post = s.posts.setStatus(id, status);
+      if (status === "published") {
+        s.related.recalculateForPost(id);
+        s.indexNow.submit([`/${post.slug}`]);
+      }
       s.auth.audit(`post_${action}`, {}, "post", id);
       return reply.redirect((req.headers.referer as string) ?? `${adminBase}/posts`);
     });
@@ -342,8 +354,9 @@ export function registerAdminRoutes(app: FastifyInstance): void {
 
   app.post("/admin/imports/:id/approve", async (req, reply) => {
     const { id } = req.params as { id: string };
-    s.posts.setStatus(id, "published");
+    const post = s.posts.setStatus(id, "published");
     s.related.recalculateForPost(id);
+    s.indexNow.submit([`/${post.slug}`]);
     s.auth.audit("import_approve", {}, "post", id);
     return reply.redirect(bp + "/admin/imports");
   });

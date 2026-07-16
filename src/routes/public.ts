@@ -153,6 +153,10 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     reply.type("application/xml; charset=utf-8").send(s.seo.sitemap()),
   );
   app.get("/robots.txt", async (_req, reply) => reply.type("text/plain").send(s.seo.robotsTxt()));
+  // IndexNow ownership key file: engines fetch it to verify pings for this host.
+  app.get(`/${s.indexNow.keyFileName}`, async (_req, reply) =>
+    reply.type("text/plain").send(s.indexNow.key),
+  );
 
   /* ---------- search (PRD 5.14) ---------- */
   app.get("/search", async (req, reply) => {

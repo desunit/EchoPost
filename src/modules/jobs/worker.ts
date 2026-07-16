@@ -10,6 +10,7 @@ import { XMetricsSyncService } from "../x/metrics-service.js";
 import { RelatedPostsService } from "../related-posts/service.js";
 import { AnalyticsService } from "../analytics/service.js";
 import { MediaService } from "../media/service.js";
+import { IndexNowService } from "../seo/indexnow.js";
 import { cache } from "../../lib/cache.js";
 import { config } from "../../config/index.js";
 import { backupDatabase } from "../../scripts-lib/backup.js";
@@ -47,6 +48,7 @@ export class JobWorker {
     const related = new RelatedPostsService(this.db);
     const analytics = new AnalyticsService(this.db);
     const media = new MediaService(this.db);
+    const indexNow = new IndexNowService(this.db, this.log);
 
     this.register("x_import", async () => {
       const summary = await importer.runImport();
@@ -54,6 +56,7 @@ export class JobWorker {
       if (summary.imported > 0) {
         this.queue.enqueue("recalculate_related", {}, { dedupe: true });
       }
+      indexNow.submit(summary.publishedPaths);
     });
 
     this.register("x_backfill", async (payload) => {
@@ -62,6 +65,11 @@ export class JobWorker {
       if (summary.imported > 0) {
         this.queue.enqueue("recalculate_related", {}, { dedupe: true });
       }
+      indexNow.submit(summary.publishedPaths);
+    });
+
+    this.register("indexnow_ping", async (payload) => {
+      await indexNow.ping(Array.isArray(payload?.urls) ? payload.urls : []);
     });
 
     this.register("x_metrics_refresh", async (payload) => {

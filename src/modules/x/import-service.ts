@@ -19,6 +19,8 @@ export interface ImportSummary {
   threadSections: number;
   skipped: number;
   errors: string[];
+  /** Site-relative paths that went live (auto-published or thread-extended) — for IndexNow pings. */
+  publishedPaths: string[];
 }
 
 /** Full tweet text: note_tweet.text for long (>280) tweets, else the standard text. */
@@ -54,7 +56,7 @@ export class XImportService {
   }
 
   async runImport(): Promise<ImportSummary> {
-    const summary: ImportSummary = { fetched: 0, imported: 0, threadSections: 0, skipped: 0, errors: [] };
+    const summary: ImportSummary = { fetched: 0, imported: 0, threadSections: 0, skipped: 0, errors: [], publishedPaths: [] };
     const account = this.accounts.get();
     if (!account.x_user_id) {
       throw new Error("No X account connected — connect one in the admin panel first");
@@ -81,7 +83,7 @@ export class XImportService {
    * `batchSize` posts per run (default 100, the X API page maximum).
    */
   async runBackfill(batchSize = 100): Promise<ImportSummary> {
-    const summary: ImportSummary = { fetched: 0, imported: 0, threadSections: 0, skipped: 0, errors: [] };
+    const summary: ImportSummary = { fetched: 0, imported: 0, threadSections: 0, skipped: 0, errors: [], publishedPaths: [] };
     const account = this.accounts.get();
     if (!account.x_user_id) {
       throw new Error("No X account connected — connect one in the admin panel first");
@@ -175,7 +177,7 @@ export class XImportService {
     const ordered = [...tweets].sort((a, b) => this.compareIds(a.id, b.id));
     for (const tweet of ordered) {
       try {
-        const result = await this.processTweet(tweet, mediaMap, rules, ownUserId, opts);
+        const result = await this.processTweet(tweet, mediaMap, rules, ownUserId, summary, opts);
         if (result === "imported") summary.imported++;
         else if (result === "thread_section") summary.threadSections++;
         else summary.skipped++;
@@ -238,6 +240,7 @@ export class XImportService {
     mediaMap: Map<string, XMedia>,
     rules: ImportRules,
     ownUserId: string,
+    summary: ImportSummary,
     opts: { forcePublish?: boolean } = {},
   ): Promise<"imported" | "thread_section" | "skipped"> {
     if (this.posts.getByXPostId(tweet.id)) return "skipped"; // idempotent
@@ -261,7 +264,7 @@ export class XImportService {
       // so it can't be matched against allowedLanguages. Blocked keywords still apply.
       const haystack = this.articleFullText(tweet).toLowerCase();
       if (rules.blockedKeywords.some((k) => k && haystack.includes(k.toLowerCase()))) return "skipped";
-      return this.importStandalone(tweet, mediaMap, rules, ownUserId, opts);
+      return this.importStandalone(tweet, mediaMap, rules, ownUserId, summary, opts);
     }
 
     // Thread continuation: a self-reply to the author's OWN previous tweet in a
@@ -279,6 +282,8 @@ export class XImportService {
         // own root (quoted id === conversation_id) is a self-promo, not content.
         if (refs.some((r) => r.type === "quoted" && r.id === tweet.conversation_id)) return "skipped";
         await this.appendThreadSection(root, tweet, mediaMap);
+        // extending a live post changes its content — worth an IndexNow ping
+        if (root.status === "published") summary.publishedPaths.push(`/${root.slug}`);
         return "thread_section";
       }
     }
@@ -301,7 +306,7 @@ export class XImportService {
     const lowered = text.toLowerCase();
     if (rules.blockedKeywords.some((k) => k && lowered.includes(k.toLowerCase()))) return "skipped";
 
-    return this.importStandalone(tweet, mediaMap, rules, ownUserId, opts);
+    return this.importStandalone(tweet, mediaMap, rules, ownUserId, summary, opts);
   }
 
   private async importStandalone(
@@ -309,6 +314,7 @@ export class XImportService {
     mediaMap: Map<string, XMedia>,
     rules: ImportRules,
     ownUserId: string,
+    summary: ImportSummary,
     opts: { forcePublish?: boolean } = {},
   ): Promise<"imported"> {
     const account = this.accounts.get();
@@ -379,6 +385,8 @@ export class XImportService {
       xRawJson: JSON.stringify(tweet),
       importedAt: nowIso(),
     });
+
+    if (post.status === "published") summary.publishedPaths.push(`/${post.slug}`);
 
     if (tagNames.length > 0) this.tags.setPostTags(post.id, tagNames, "auto");
 

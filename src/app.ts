@@ -19,6 +19,7 @@ import { AnalyticsService } from "./modules/analytics/service.js";
 import { NewsletterService } from "./modules/newsletter/service.js";
 import { RssService } from "./modules/rss/service.js";
 import { SeoService } from "./modules/seo/service.js";
+import { IndexNowService } from "./modules/seo/indexnow.js";
 import { StatsService } from "./modules/stats/service.js";
 import { ArchiveQaService } from "./modules/ama/service.js";
 import { AuthService } from "./modules/auth/service.js";
@@ -43,6 +44,7 @@ export interface Services {
   newsletter: NewsletterService;
   rss: RssService;
   seo: SeoService;
+  indexNow: IndexNowService;
   stats: StatsService;
   ama: ArchiveQaService;
   auth: AuthService;
@@ -102,6 +104,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
     newsletter: new NewsletterService(db, app.log as any),
     rss: new RssService(db),
     seo: new SeoService(db),
+    indexNow: new IndexNowService(db, app.log as any),
     stats: new StatsService(db),
     ama: new ArchiveQaService(db),
     auth,

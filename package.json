@@ -13,6 +13,7 @@
     "backup": "tsx src/scripts/backup.ts",
     "create-admin": "tsx src/scripts/create-admin.ts",
     "import-wordpress": "tsx src/scripts/import-wordpress.ts",
+    "indexnow-submit-all": "tsx src/scripts/indexnow-submit-all.ts",
     "rewrite-media-base": "tsx src/scripts/rewrite-media-base.ts",
     "rebuild-derived": "tsx src/scripts/rebuild-derived.ts",
     "test": "vitest run",

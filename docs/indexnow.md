@@ -30,6 +30,14 @@ Google does not use IndexNow — it still discovers via sitemap/crawl.
 The WordPress importer intentionally does not ping — it's a one-shot historical
 migration; the sitemap covers it.
 
+## Bulk submission
+
+`npm run indexnow-submit-all` pings every sitemap URL (homepage, /tags, /stats,
+all published posts, tag pages) in one batch — run it once after enabling
+IndexNow or after a bulk import. It pings directly (no job queue) and ignores
+`INDEXNOW_ENABLED` (running it is explicit intent), but refuses a localhost
+`SITE_URL`. Run it on the server so it uses the production DB and env.
+
 ## Configuration
 
 ```bash

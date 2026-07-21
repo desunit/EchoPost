@@ -29,6 +29,8 @@ import { registerPublicRoutes } from "./routes/public.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { formatDate, formatDateShort, formatNumber } from "./lib/time.js";
+import { buildContentSecurityPolicy } from "./lib/csp.js";
+import { randomBytes } from "node:crypto";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -139,6 +141,11 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
   });
   const siteSettings = () => services.settings.getSiteSettings();
   app.decorate("view", function (reply: FastifyReply, template: string, data: Record<string, unknown> = {}) {
+    // Never emit analytics on admin pages. Every admin view is rendered as an
+    // "admin/*" template (including the pre-auth login page, which doesn't set
+    // the `admin` data flag), so gate on the template name — robust regardless
+    // of BASE_PATH or auth state.
+    const isAdminPage = template.startsWith("admin/");
     const html = eta.render(template, {
       site: {
         url: config.siteUrl,
@@ -146,8 +153,14 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
         brand: config.siteBrand,
         description: config.siteDescription,
         xUsername: config.x.username,
+        // GA4 measurement ID ("" = disabled). Forced empty on admin pages so the
+        // gtag snippet never renders there. The layout emits it when non-empty.
+        gaMeasurementId: isAdminPage ? "" : config.analytics.gaMeasurementId,
         ...siteSettings(),
       },
+      // Per-request CSP nonce authorizing the inline gtag bootstrap (set in the
+      // onRequest hook only when GA is enabled).
+      gaNonce: (reply.request as { cspNonce?: string }).cspNonce,
       // URL prefix for all internal page/feed/admin links (empty at root).
       // Static assets (/assets, /media) are served at root and never prefixed.
       base: config.basePath,
@@ -168,10 +181,16 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
     reply.header("X-Content-Type-Options", "nosniff");
     reply.header("X-Frame-Options", "SAMEORIGIN");
     reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
-    reply.header(
-      "Content-Security-Policy",
-      "default-src 'self'; img-src 'self' data: https://pbs.twimg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://platform.twitter.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://platform.twitter.com; frame-ancestors 'self'",
-    );
+    // When GA4 is enabled, mint a per-request nonce for the inline gtag snippet
+    // and widen the CSP just enough for GA. With GA off the policy stays strict
+    // and byte-identical to the original.
+    const gaMeasurementId = config.analytics.gaMeasurementId;
+    let nonce: string | undefined;
+    if (gaMeasurementId) {
+      nonce = randomBytes(16).toString("base64");
+      (req as { cspNonce?: string }).cspNonce = nonce;
+    }
+    reply.header("Content-Security-Policy", buildContentSecurityPolicy({ gaMeasurementId, nonce }));
 
     // Trailing-slash normalization (301): WordPress permalinks end in "/", but
     // imported slugs are stored without one, so "/slug/" would 404. Redirect to

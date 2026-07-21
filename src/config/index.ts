@@ -57,6 +57,15 @@ export function parseTrustProxy(raw: string): boolean | number | string[] {
   return v.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+// Normalize the optional GA4 measurement ID. Only [A-Za-z0-9-] is accepted
+// (GA4 IDs look like "G-XXXXXXXXXX"); anything else — or an empty value —
+// disables GA. Restricting the charset keeps the ID safe to interpolate into
+// the page HTML and the Content-Security-Policy header without escaping issues.
+export function normalizeGaMeasurementId(raw: string): string {
+  const v = raw.trim();
+  return /^[A-Za-z0-9-]+$/.test(v) ? v : "";
+}
+
 function hostOf(url: string): string | null {
   try {
     return url ? new URL(url).hostname : null;
@@ -213,6 +222,14 @@ export const config = {
       pass: env("SMTP_PASS"),
       secure: env("SMTP_SECURE") === "true",
     },
+  },
+
+  analytics: {
+    // Google Analytics 4 measurement ID (e.g. G-XXXXXXXXXX). Empty = GA disabled
+    // and the strict, GA-free Content-Security-Policy is served. When set, the
+    // layout emits the gtag snippet on public pages (never on /admin) and the CSP
+    // is widened just enough for GA. See src/lib/csp.ts.
+    gaMeasurementId: normalizeGaMeasurementId(env("GA_MEASUREMENT_ID")),
   },
 
   llm: {

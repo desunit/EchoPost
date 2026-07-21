@@ -25,6 +25,16 @@
   <meta name="theme-color" content="#fcfbf7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#16140f" media="(prefers-color-scheme: dark)">
   <% if (it.jsonLd) { %><script type="application/ld+json"><%~ it.jsonLd %></script><% } %>
+  <% if (it.site.gaMeasurementId && !it.admin) { %>
+  <!-- Google Analytics 4 (gtag.js) — enabled via GA_MEASUREMENT_ID -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<%= it.site.gaMeasurementId %>"></script>
+  <script<% if (it.gaNonce) { %> nonce="<%= it.gaNonce %>"<% } %>>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '<%= it.site.gaMeasurementId %>');
+  </script>
+  <% } %>
 </head>
 <body>
 <header class="site-header">

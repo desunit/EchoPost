@@ -33,6 +33,7 @@ To boot locally the app needs `ADMIN_PASSWORD` set (or `npm run create-admin`); 
 
 - **FTS index**: `post_search` (FTS5) is synced manually, not by triggers. Any code path that changes a post's title/body/tags/status must call `posts.syncSearchIndex(post)` — only published posts are indexed. Related-post scoring and `/search` both depend on it.
 - **Cache invalidation**: an in-memory TTL cache (`src/lib/cache.ts`) fronts the homepage, post pages, RSS, sitemap, stats. Content mutations must call `invalidateContentCaches()` (PostsService/TagsService already do).
+- **HTML is never edge-cached**: production sits behind Cloudflare, but pageviews are recorded server-side (`analytics.recordView`, `routes/public.ts`), so caching HTML at the edge would zero out view counts. Only media, assets, feeds and the sitemap are cached. See `docs/cloudflare-cdn.md`.
 - **Metric snapshots are append-only**: `x_metric_snapshots` is never updated in place. All "30-day growth" sorts work by subtracting the snapshot nearest 30 days ago from the latest — don't "fix" this into a single-row upsert.
 - **Slug changes on published posts create 301 redirects** (`redirects` table, checked in an `onRequest` hook). `PostsService.update` handles this; preserve it when touching slug logic.
 - **Manual edits survive sync**: `preserve_manual_title` / `preserve_manual_body` flags on posts gate what the X importer may overwrite. The admin post-update route sets them automatically when an imported post is edited.

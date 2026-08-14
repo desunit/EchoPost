@@ -74,8 +74,9 @@ browser — no text leaves this page.</p>
 
   <h2>Stronger methods</h2>
   <p>For AI-generated text, statistical watermarks (e.g. Google SynthID-Text) survive
-  copy-paste and light edits, but only work on text you generate yourself. C2PA signs the
-  file's provenance. The durable use of this page is defensive: <strong>Check &amp; Clean</strong>
+  copy-paste and light edits, but only work on text you generate yourself, and they live in
+  the word choice rather than in hidden characters — so cleaning invisible characters does not
+  remove them. The durable use of this page is defensive: <strong>Check &amp; Clean</strong>
   finds hidden characters used to smuggle instructions into AI systems or slip past filters.</p>
 </section>
 

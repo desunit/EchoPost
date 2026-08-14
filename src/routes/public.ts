@@ -139,6 +139,25 @@ export function registerPublicRoutes(app: FastifyInstance): void {
     });
   });
 
+  /* ---------- projects ---------- */
+  app.get("/projects", async (req, reply) => {
+    track(app, req, null);
+    return app.view(reply, "projects", {
+      title: `Projects — ${titleSuffix}`,
+      canonicalUrl: `${config.publicUrl}/projects`,
+    });
+  });
+
+  app.get("/projects/text-watermark", async (req, reply) => {
+    track(app, req, null);
+    return app.view(reply, "project-text-watermark", {
+      title: `Text Watermark — ${titleSuffix}`,
+      canonicalUrl: `${config.publicUrl}/projects/text-watermark`,
+      metaDescription:
+        "Embed an invisible watermark in text with zero-width Unicode characters, or check and clean hidden characters. Runs entirely in your browser.",
+    });
+  });
+
   /* ---------- feeds + SEO ---------- */
   app.get("/rss", async (_req, reply) =>
     reply.type("application/rss+xml; charset=utf-8").send(s.rss.build()),

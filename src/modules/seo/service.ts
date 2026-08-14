@@ -13,6 +13,8 @@ export class SeoService {
       const urls: Array<{ loc: string; lastmod?: string }> = [
         { loc: `${config.publicUrl}/` },
         { loc: `${config.publicUrl}/tags` },
+        { loc: `${config.publicUrl}/projects` },
+        { loc: `${config.publicUrl}/projects/text-watermark` },
         { loc: `${config.publicUrl}/stats` },
       ];
 

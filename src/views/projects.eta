@@ -1,0 +1,20 @@
+<% layout("layout") %>
+
+<h1>Projects</h1>
+<p class="muted">Things I build and maintain.</p>
+
+<ul class="project-list">
+  <li>
+    <h2><a href="https://github.com/desunit/EchoPost" rel="noopener">EchoPost</a></h2>
+    <p>The engine behind this site: a personal content archive that mirrors X posts to
+    permanent, SEO-friendly blog pages. One Node.js process, server-rendered HTML,
+    SQLite as the only datastore.
+    <a href="https://github.com/desunit/EchoPost" rel="noopener">Source on GitHub</a>.</p>
+  </li>
+  <li>
+    <h2><a href="<%= it.base %>/projects/text-watermark">Text Watermark</a></h2>
+    <p>Hide an invisible watermark inside plain text using zero-width Unicode characters —
+    or check suspicious text and clean the hidden characters out. Two modes:
+    check&nbsp;&amp;&nbsp;clean, and embed. Runs entirely in your browser; nothing is uploaded.</p>
+  </li>
+</ul>

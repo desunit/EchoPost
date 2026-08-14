@@ -1,0 +1,68 @@
+<% layout("layout") %>
+
+<h1>Text Watermark</h1>
+<p class="muted">Embed an invisible watermark in text with zero-width Unicode characters,
+or check text for hidden characters and clean them out. Everything runs locally in your
+browser — no text leaves this page.</p>
+
+<div class="tool-tabs" role="tablist">
+  <button type="button" id="tab-check" role="tab" aria-selected="true" aria-controls="pane-check">Check &amp; Clean</button>
+  <button type="button" id="tab-embed" role="tab" aria-selected="false" aria-controls="pane-embed">Embed</button>
+</div>
+
+<section class="tool-pane" id="pane-check" role="tabpanel" aria-labelledby="tab-check">
+  <div class="tool-field">
+    <label for="check-input">Text to inspect</label>
+    <textarea id="check-input" rows="6" placeholder="Paste text here…"></textarea>
+  </div>
+  <div class="tool-actions">
+    <button type="button" id="check-run">Check</button>
+    <button type="button" id="clean-run">Clean</button>
+  </div>
+  <div class="tool-report" id="check-report" hidden></div>
+  <div class="tool-field" id="clean-output-wrap" hidden>
+    <label for="clean-output">Cleaned text</label>
+    <textarea id="clean-output" rows="6" readonly></textarea>
+    <div class="tool-actions">
+      <button type="button" id="clean-copy">Copy cleaned text</button>
+    </div>
+    <p class="muted">Note: cleaning removes every invisible character, including joiners and
+    variation selectors that some composed emoji depend on.</p>
+  </div>
+</section>
+
+<section class="tool-pane" id="pane-embed" role="tabpanel" aria-labelledby="tab-embed" hidden>
+  <div class="tool-field">
+    <label for="embed-input">Text to watermark</label>
+    <textarea id="embed-input" rows="6" placeholder="Paste the text to protect…"></textarea>
+  </div>
+  <div class="tool-field">
+    <label for="embed-message">Watermark message</label>
+    <input type="text" id="embed-message" maxlength="200" placeholder="e.g. © desunit 2026, copy #42">
+  </div>
+  <div class="tool-actions">
+    <button type="button" id="embed-run">Embed watermark</button>
+  </div>
+  <div class="tool-report" id="embed-report" hidden></div>
+  <div class="tool-field" id="embed-output-wrap" hidden>
+    <label for="embed-output">Watermarked text</label>
+    <textarea id="embed-output" rows="6" readonly></textarea>
+    <div class="tool-actions">
+      <button type="button" id="embed-copy">Copy watermarked text</button>
+    </div>
+    <p class="muted">The output looks identical to the input, but it carries your message as
+    zero-width characters. Paste it into the Check tab to verify.</p>
+  </div>
+</section>
+
+<section class="tool-notes">
+  <h2>How it works</h2>
+  <p>The watermark message is encoded as UTF-8 bits and written with zero-width characters:
+  <code>U+200C</code> (zero-width non-joiner) for 0, <code>U+200D</code> (zero-width joiner)
+  for 1, wrapped in <code>U+2060</code> (word joiner) markers. The payload is inserted after
+  the first word, where it survives most copy-paste operations. The checker also detects
+  other common invisible characters (zero-width spaces, direction marks, soft hyphens,
+  variation selectors, Unicode tag characters).</p>
+</section>
+
+<script src="<%= it.base %>/assets/text-watermark.js" defer></script>

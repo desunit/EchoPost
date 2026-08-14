@@ -722,3 +722,38 @@ button.chip { border: none; }
 .x-ref-card__excerpt { color: var(--fg-soft); font-size: 0.9rem; line-height: 1.4; }
 .x-ref-card__source { color: var(--muted); font-size: 0.72rem; font-family: var(--font-mono); margin-top: 0.15rem; }
 .post-body .twitter-tweet { margin: 1.5rem auto; }
+
+/* ---------- projects ---------- */
+.project-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+.project-list > li { padding: 1.1rem 0; border-top: 1px solid var(--hairline); }
+.project-list > li:first-child { border-top: none; }
+.project-list h2 { margin: 0 0 0.4rem; font-size: 1.25rem; }
+.project-list p { margin: 0; color: var(--fg-soft); }
+
+/* ---------- tool: text watermark ---------- */
+.tool-tabs { display: flex; gap: 0.5rem; margin: 1.5rem 0 1rem; }
+.tool-tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+.tool-pane { margin-bottom: 1.5rem; }
+.tool-field { margin: 1rem 0; }
+.tool-field label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.tool-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0.8rem 0; }
+.tool-report {
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--accent);
+  padding: 0.8rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.tool-report ul { margin: 0.5rem 0 0; padding-left: 1.2rem; font-family: var(--font-mono); font-size: 0.82rem; }
+.tool-report p { margin: 0.3rem 0; }
+.tool-notes { margin-top: 2rem; border-top: 1px solid var(--hairline); padding-top: 1rem; }
+.tool-notes h2 { font-size: 1rem; }
+.tool-notes code { font-family: var(--font-mono); font-size: 0.82rem; }

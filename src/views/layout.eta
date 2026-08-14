@@ -42,6 +42,7 @@
     <% if (it.isHome) { /* brand already shown as the page <h1>; keep a spacer so nav-links stay right-aligned */ %><span></span><% } else { %><a href="<%= it.base %>/" class="site-name"><% if (it.site.xUsername) { %>@<%= it.site.xUsername %><% } else { %><%= it.site.title %><% } %></a><% } %>
     <span class="nav-links">
       <a href="<%= it.base %>/tags">Tags</a>
+      <a href="<%= it.base %>/projects">Projects</a>
       <a href="<%= it.base %>/stats">Stats</a>
       <a href="<%= it.base %>/search">Search</a>
       <a href="<%= it.base %>/rss">RSS</a>
@@ -57,7 +58,7 @@
 <footer class="site-footer">
   <% if (it.site.customFooterHtml) { %><div><%~ it.site.customFooterHtml %></div><% } %>
   <p>
-    <a href="<%= it.base %>/">Archive</a> · <a href="<%= it.base %>/tags">Tags</a> · <a href="<%= it.base %>/stats">Stats</a> · <a href="<%= it.base %>/rss">RSS</a>
+    <a href="<%= it.base %>/">Archive</a> · <a href="<%= it.base %>/tags">Tags</a> · <a href="<%= it.base %>/projects">Projects</a> · <a href="<%= it.base %>/stats">Stats</a> · <a href="<%= it.base %>/rss">RSS</a>
     <% if (it.site.authorXUrl) { %> · <a href="<%= it.site.authorXUrl %>" rel="noopener">X</a><% } %>
   </p>
   <% if (it.totals) { %>

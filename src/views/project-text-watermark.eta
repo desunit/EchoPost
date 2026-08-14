@@ -15,6 +15,11 @@ browser — no text leaves this page.</p>
     <label for="check-input">Text to inspect</label>
     <textarea id="check-input" rows="6" placeholder="Paste text here…"></textarea>
   </div>
+  <p class="tool-report"><strong>Note:</strong> this checks and removes character-level marks
+  only — hidden Unicode, exotic spaces, bidi controls, and tag characters. It does
+  <strong>not</strong> remove statistical watermarks such as Google SynthID-Text, which live
+  in the word choice of AI-generated text, not in hidden characters. No character trick
+  removes those; only rewriting the text does.</p>
   <div class="tool-actions">
     <button type="button" id="check-run">Check</button>
     <button type="button" id="clean-run">Clean</button>

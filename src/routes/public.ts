@@ -37,7 +37,11 @@ function track(app: FastifyInstance, req: FastifyRequest, postId: string | null)
   }
 }
 
-/** Groups archive items into [{year, posts}] newest year first. */
+/**
+ * Groups archive items into [{year, posts}]. Year groups follow the order the
+ * posts arrive in (which callers pre-sort by published_at), so a "latest" list
+ * yields newest year first and an "oldest" list yields oldest year first.
+ */
 function groupByYear<T extends { published_at: string | null }>(posts: T[]): Array<{ year: number; posts: T[] }> {
   const groups = new Map<number, T[]>();
   for (const p of posts) {
@@ -45,9 +49,7 @@ function groupByYear<T extends { published_at: string | null }>(posts: T[]): Arr
     if (!groups.has(year)) groups.set(year, []);
     groups.get(year)!.push(p);
   }
-  return [...groups.entries()]
-    .sort((a, b) => b[0] - a[0])
-    .map(([year, items]) => ({ year, posts: items }));
+  return [...groups.entries()].map(([year, items]) => ({ year, posts: items }));
 }
 
 export function registerPublicRoutes(app: FastifyInstance): void {

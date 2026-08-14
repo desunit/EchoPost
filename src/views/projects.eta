@@ -39,7 +39,7 @@
     progressions that actually work.</p>
   </li>
   <li>
-    <h2><a href="https://www.songtive.com/products/chordiq" rel="noopener">ChordIQ</a></h2>
+    <h2><a href="https://chordiq.info" rel="noopener">ChordIQ</a></h2>
     <p>Ear-training and music-theory games that build real pitch and theory skills, one quick
     session at a time.</p>
   </li>
@@ -49,13 +49,18 @@
     and favourite things, illustrated in minutes.</p>
   </li>
   <li>
-    <h2><a href="https://www.songtive.com/products/songtive" rel="noopener">Songtive</a></h2>
-    <p>The social network for musicians — write, play, and share songs with chords, styles, and
-    a full virtual band. Now sunset, but still here to explore.</p>
-  </li>
-  <li>
     <h2><a href="https://mathit.app" rel="noopener">MathIt</a></h2>
     <p>Real-time multiplayer math duels for 2–5 players — share a room code and race to solve
     first.</p>
+  </li>
+  <li>
+    <h2><a href="https://www.songtive.com/products/songtive" rel="noopener">Songtive</a> <span class="muted">(discontinued)</span></h2>
+    <p>A social network for musicians — write, play, and share songs with chords, styles, and a
+    full virtual band.</p>
+  </li>
+  <li>
+    <h2>Rwiz AI <span class="muted">(discontinued)</span></h2>
+    <p>Helped small businesses automate review responses, consolidate feedback, and build
+    customer trust.</p>
   </li>
 </ul>

@@ -49,8 +49,15 @@
 
   /* ---------- invisible character inventory ---------- */
 
+  // Zero-width / format / bidi / tag characters — removed entirely by Clean.
   var INVISIBLE_RE =
     /[­͏؜ᅟᅠ឴឵᠋-᠏​-‏‪-‮⁠-⁤⁦-⁩ㅤ︀-️﻿ﾠ\u{E0000}-\u{E007F}]/gu;
+
+  // Exotic spaces — visible whitespace often used to evade filters. Clean
+  // normalizes each to a plain space (U+0020) rather than deleting it, so words
+  // stay separated. Covers U+00A0, U+1680, U+2000-200A, U+202F, U+205F, U+3000,
+  // and the braille blank U+2800.
+  var EXOTIC_SPACE_RE = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u2800]/g;
 
   var CHAR_NAMES = {
     0x00ad: "soft hyphen",
@@ -67,6 +74,12 @@
     0x2063: "invisible separator",
     0x2064: "invisible plus",
     0xfeff: "byte order mark / ZWNBSP",
+    0x00a0: "no-break space",
+    0x1680: "ogham space mark",
+    0x202f: "narrow no-break space",
+    0x205f: "medium mathematical space",
+    0x3000: "ideographic space",
+    0x2800: "braille pattern blank",
   };
 
   function charName(cp) {
@@ -75,24 +88,29 @@
     if (cp >= 0x202a && cp <= 0x202e) return "bidi control";
     if (cp >= 0x2066 && cp <= 0x2069) return "bidi isolate";
     if (cp >= 0x180b && cp <= 0x180f) return "Mongolian selector/separator";
+    if (cp >= 0x2000 && cp <= 0x200a) return "exotic space";
     if (cp >= 0xe0000 && cp <= 0xe007f) return "Unicode tag character";
-    return "invisible character";
+    return "hidden character";
   }
 
   function inventory(text) {
     var counts = new Map();
     var total = 0;
-    var matches = text.matchAll(INVISIBLE_RE);
-    for (var m of matches) {
-      var cp = m[0].codePointAt(0);
-      counts.set(cp, (counts.get(cp) || 0) + 1);
-      total++;
+    function scan(re) {
+      for (var m of text.matchAll(re)) {
+        var cp = m[0].codePointAt(0);
+        counts.set(cp, (counts.get(cp) || 0) + 1);
+        total++;
+      }
     }
+    scan(INVISIBLE_RE);
+    scan(EXOTIC_SPACE_RE);
     return { total: total, counts: counts };
   }
 
+  // Normalize exotic spaces to a plain space, then strip zero-width/format chars.
   function cleanText(text) {
-    return text.replace(INVISIBLE_RE, "");
+    return text.replace(EXOTIC_SPACE_RE, " ").replace(INVISIBLE_RE, "");
   }
 
   /* ---------- UI ---------- */
@@ -138,10 +156,10 @@
     var inv = inventory(text);
     var html = "";
     if (inv.total === 0) {
-      html += "<p><strong>Clean.</strong> No invisible characters found in " +
+      html += "<p><strong>Clean.</strong> No hidden or unusual characters found in " +
         text.length + " characters.</p>";
     } else {
-      html += "<p><strong>" + inv.total + " invisible character" +
+      html += "<p><strong>" + inv.total + " hidden or unusual character" +
         (inv.total === 1 ? "" : "s") + " found</strong> in " + text.length +
         " characters:</p><ul>";
       inv.counts.forEach(function (count, cp) {
@@ -169,8 +187,9 @@
     $("clean-output-wrap").hidden = false;
     $("check-report").hidden = false;
     $("check-report").innerHTML =
-      "<p>Removed <strong>" + removed + "</strong> invisible character" +
-      (removed === 1 ? "" : "s") + ".</p>";
+      "<p>Cleaned <strong>" + removed + "</strong> hidden or unusual character" +
+      (removed === 1 ? "" : "s") +
+      " (invisible characters removed; exotic spaces normalized).</p>";
   });
 
   /* embed */

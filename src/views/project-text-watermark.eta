@@ -60,9 +60,11 @@ browser — no text leaves this page.</p>
   <p>The watermark message is encoded as UTF-8 bits and written with zero-width characters:
   <code>U+200C</code> (zero-width non-joiner) for 0, <code>U+200D</code> (zero-width joiner)
   for 1, wrapped in <code>U+2060</code> (word joiner) markers. The payload is inserted after
-  the first word, where it survives most copy-paste operations. The checker also detects
-  other common invisible characters (zero-width spaces, direction marks, soft hyphens,
-  variation selectors, Unicode tag characters).</p>
+  the first word, where it survives most copy-paste operations. Check &amp; Clean detects and
+  removes four families of suspect characters: invisible Unicode (zero-width spaces, joiners,
+  soft hyphens, variation selectors), exotic spaces (no-break, en/em, ideographic, braille
+  blank — normalized to a plain space), bidi controls and isolates, and Unicode tag
+  characters (<code>U+E0000</code>–<code>U+E007F</code>).</p>
 
   <h2>Weak points</h2>
   <p>This is a lightweight tracer, not a secure watermark. The <strong>Clean</strong> tab

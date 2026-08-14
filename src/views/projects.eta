@@ -17,4 +17,20 @@
     or check suspicious text and clean the hidden characters out. Two modes:
     check&nbsp;&amp;&nbsp;clean, and embed. Runs entirely in your browser; nothing is uploaded.</p>
   </li>
+  <li>
+    <h2><a href="https://github.com/desunit/appfigures-mcp" rel="noopener">Appfigures MCP</a></h2>
+    <p>An MCP server that connects the Appfigures analytics API to AI assistants, so you can ask
+    in plain language about app downloads, revenue, subscriptions, and reviews.</p>
+  </li>
+  <li>
+    <h2><a href="https://github.com/desunit/google-play-analytics-mcp" rel="noopener">Google Play Analytics MCP</a></h2>
+    <p>An MCP server that exposes Google Play Console analytics to AI agents — acquisitions by
+    traffic source, installs and uninstalls, ratings, crashes, subscriptions, and reviews —
+    by parsing the bulk CSV reports exported to Cloud Storage.</p>
+  </li>
+  <li>
+    <h2><a href="https://github.com/desunit/reddit-ads-mcp" rel="noopener">Reddit Ads MCP</a></h2>
+    <p>An MCP server that connects the Reddit Ads API to AI assistants, to browse and manage ad
+    accounts, campaigns, and performance reports through natural-language commands.</p>
+  </li>
 </ul>

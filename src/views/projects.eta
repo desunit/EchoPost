@@ -64,3 +64,18 @@
     customer trust.</p>
   </li>
 </ul>
+
+<h2>Ventures &amp; roles</h2>
+<ul class="project-list">
+  <li>
+    <h2><a href="https://binitex.com" rel="noopener">Binitex</a> <span class="muted">— co-founder</span></h2>
+    <p>A custom software development company building enterprise solutions across insurance,
+    transportation, real estate, fintech, and car rental.</p>
+  </li>
+  <li>
+    <h2><a href="https://economybookings.com" rel="noopener">EconomyBookings</a> <span class="muted">— shareholder &amp; part-time CTO</span></h2>
+    <p>A car-rental marketplace grown from nothing to roughly €150M/year, with hundreds of
+    supplier integrations serving millions of requests a day. I helped build the backend and
+    frontend foundation, and I still serve as part-time CTO.</p>
+  </li>
+</ul>

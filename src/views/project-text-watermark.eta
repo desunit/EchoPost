@@ -63,6 +63,37 @@ browser — no text leaves this page.</p>
   the first word, where it survives most copy-paste operations. The checker also detects
   other common invisible characters (zero-width spaces, direction marks, soft hyphens,
   variation selectors, Unicode tag characters).</p>
+
+  <h2>Weak points</h2>
+  <p>Treat this as a lightweight tracer, not a secure watermark. It is easy to defeat:</p>
+  <ul>
+    <li>Anyone can strip it — the <strong>Clean</strong> tab above removes it in one step.</li>
+    <li>Many platforms delete zero-width characters automatically (X, some chat apps and
+      forms), so the mark is simply lost in transit.</li>
+    <li>It does not survive a retype, a screenshot, or OCR — only the visible letters remain.</li>
+    <li>Unicode normalization (NFC/NFKC) can remove it.</li>
+    <li>It is not secret: anyone with a tool like this can see and read it.</li>
+  </ul>
+  <p>It fits one job well: tracing a leak in a closed channel. Give each recipient a copy
+  carrying a different hidden mark; if the text leaks, the mark points to the source — but
+  only while nobody cleans, normalizes, or retypes it.</p>
+
+  <h2>Stronger methods</h2>
+  <ul>
+    <li><strong>Statistical watermarks for AI text</strong> (e.g. Google SynthID-Text,
+      Kirchenbauer&nbsp;et&nbsp;al. 2023): the model biases its own token choices during
+      generation. A detector recovers the signal, and it survives copy-paste and light edits.
+      It only works on text you generate yourself, and heavy rewording removes it.</li>
+    <li><strong>Linguistic watermarks</strong>: synonym, word-order or spacing changes. More
+      robust than zero-width characters, but a rewrite still breaks it.</li>
+    <li><strong>Homoglyph substitution</strong>: swap a letter for a look-alike from another
+      script. Visible under inspection, and it breaks search and copy.</li>
+    <li><strong>Content provenance</strong> (C2PA): cryptographically signs the file, not the
+      text. It proves origin, but copying the raw text discards it.</li>
+  </ul>
+  <p>The more durable value of this page is defensive: attackers hide zero-width and Unicode
+  tag characters to smuggle instructions into AI systems and to slip past filters. Use the
+  <strong>Check &amp; Clean</strong> tab to find and remove them.</p>
 </section>
 
 <script src="<%= it.base %>/assets/text-watermark.js" defer></script>

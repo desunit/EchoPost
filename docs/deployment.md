@@ -53,6 +53,10 @@ Caddy provides HTTPS automatically. The app sets `trustProxy`, so client IPs (fo
 ## Operations
 
 - Health: `GET /health`, `/health/db`, `/health/jobs` (503 when the queue backs up or dead jobs accumulate).
-- Logs: pino JSON on stdout — `journalctl -u echopost` or `docker logs`.
+- Logs: pino JSON on stdout — `journalctl -u echopost` or `docker logs`. Each line carries
+  `service: "echopost"` and the text in `message` (since 2026-11-11), so Promtail gives it the
+  Loki label `service="echopost"` and ERROR lines reach the Grafana "Service Errors" alert.
+  A V8 out-of-memory crash is plain text, not JSON: look for it with
+  `docker service ps echopost_echopost --no-trunc` (exit 134) and the HAProxy 503 `SC` / 502 `SH`.
 - Disk: media grows in `data/media`; backups in `backups/`. Alert at 80% disk usage.
 - The job worker runs inside the web process: run exactly **one** instance.

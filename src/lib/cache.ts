@@ -10,6 +10,18 @@ interface Entry {
 
 const store = new Map<string, Entry>();
 
+/**
+ * Hard cap on entries. Without it, expired entries stayed until the SAME key was
+ * read again, so a crawler that visited each post once kept every post page in
+ * memory (2026-11: each also held a copy of the whole archive → heap OOM,
+ * exit 134, desunit.com 502/503 bursts).
+ */
+export const MAX_ENTRIES = 500;
+
+function sweepExpired(now: number): void {
+  for (const [key, entry] of store) if (entry.expiresAt < now) store.delete(key);
+}
+
 export const cache = {
   get<T>(key: string): T | undefined {
     const entry = store.get(key);
@@ -22,7 +34,19 @@ export const cache = {
   },
 
   set(key: string, value: unknown, ttlMs = 60_000): void {
-    store.set(key, { value, expiresAt: Date.now() + ttlMs });
+    const now = Date.now();
+    store.delete(key); // re-insert so Map order = insertion age
+    if (store.size >= MAX_ENTRIES) sweepExpired(now);
+    // still full: drop the oldest entries (Map iterates in insertion order)
+    for (const k of store.keys()) {
+      if (store.size < MAX_ENTRIES) break;
+      store.delete(k);
+    }
+    store.set(key, { value, expiresAt: now + ttlMs });
+  },
+
+  size(): number {
+    return store.size;
   },
 
   getOrCompute<T>(key: string, ttlMs: number, compute: () => T): T {

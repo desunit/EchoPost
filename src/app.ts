@@ -65,6 +65,11 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
   const app = Fastify({
     logger: {
       level: config.isProduction ? "info" : "debug",
+      // Promtail on beta takes the Loki labels `service`/`level` and the line from
+      // `message`. Without these, EchoPost lines had no `service` label and its ERRORs
+      // never reached the Grafana "Service Errors" alert (found 2026-11-10).
+      base: { service: "echopost" },
+      messageKey: "message",
       transport: config.isProduction ? undefined : { target: "pino-pretty" },
     },
     trustProxy: config.trustProxy,

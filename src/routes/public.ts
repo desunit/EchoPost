@@ -277,6 +277,14 @@ export function registerPublicRoutes(app: FastifyInstance): void {
 
     track(app, req, post.id);
 
+    // ONE shared copy of the archive for every post page. It used to be built inside
+    // the per-post entry below: ~4-5 MB of heap per visited post (all columns of all
+    // posts) → a crawler filled the 259 MB heap in seconds (OOM 2026-11-06..10).
+    // Key under "home:" so invalidateContentCaches() clears it with the homepage.
+    const archiveGroups = cache.getOrCompute("home:post-page-archive", 60_000, () =>
+      groupByYear(s.posts.listArchive({ sort: "latest" })),
+    );
+
     const data = cache.getOrCompute(`post:${post.id}`, 60_000, () => {
       const tags = s.tags.forPost(post.id);
       const media = s.media.forPost(post.id);
@@ -285,7 +293,6 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       const metrics = s.posts.latestMetrics(post.id);
       const blogViews = s.posts.blogViews(post.id);
       const totals = s.posts.totalArchiveViews();
-      const archiveGroups = groupByYear(s.posts.listArchive({ sort: "latest" }));
       // Resolve X references: own-account quotes → internal cards, others → widgets.
       const account = s.xAccount.get();
       const { html: bodyHtml, hasWidget: hasXWidget } = embedXReferences(post.html_body ?? "", {
@@ -309,7 +316,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       const ogImage = ogMedia ? absoluteMediaUrl(ogMedia.public_url) : undefined;
 
       return {
-        tags, media, related, prev, next, metrics, blogViews, totals, archiveGroups, bodyHtml, hasXWidget,
+        tags, media, related, prev, next, metrics, blogViews, totals, bodyHtml, hasXWidget,
         ogImage, ogType: "article", metaDescription: post.seo_description || post.excerpt || undefined,
       };
     });
@@ -319,6 +326,7 @@ export function registerPublicRoutes(app: FastifyInstance): void {
       post,
       jsonLd: s.seo.jsonLd(post, s.settings.getSiteSettings().authorName, data.ogImage),
       canonicalUrl: post.canonical_url || `${config.publicUrl}/${post.slug}`,
+      archiveGroups,
       ...data,
     });
   });

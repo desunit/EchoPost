@@ -77,6 +77,15 @@ In-memory TTL cache keyed by prefix (`home:*`, `post:*`, `rss:*`,
 `invalidateContentCaches()`. SQLite remains the source of truth; a restart
 loses nothing but warm caches.
 
+The cache holds at most `MAX_ENTRIES` (500). `set()` sweeps expired entries
+when it is full, then drops the oldest. Never put a large shared value
+(the archive list, all posts) inside a per-page entry: give it ONE shared
+key. Before 2026-11-11 every `post:<id>` entry held its own copy of the full
+archive (~4–5 MB each) and expired entries were removed only on a re-read of
+the same key. A crawler that opened ~55 posts filled the 259 MB V8 heap:
+"JavaScript heap out of memory", exit 134, and HAProxy answered 503/502 during
+each restart (1,424 errors in 5 days).
+
 ## Security
 
 - Admin: scrypt password hash, opaque session token (stored hashed),

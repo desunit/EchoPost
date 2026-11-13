@@ -33,6 +33,17 @@ describe("buildContentSecurityPolicy", () => {
   });
 });
 
+describe("buildContentSecurityPolicy with Turnstile", () => {
+  it("allows the Turnstile script and iframe only when enabled", () => {
+    const csp = buildContentSecurityPolicy({ turnstile: true });
+    expect(csp).toContain("script-src 'self' https://platform.twitter.com https://challenges.cloudflare.com");
+    expect(csp).toContain(
+      "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://platform.twitter.com https://challenges.cloudflare.com",
+    );
+    expect(buildContentSecurityPolicy({ turnstile: false })).toBe(STRICT);
+  });
+});
+
 describe("normalizeGaMeasurementId", () => {
   it("accepts a valid GA4 measurement ID", () => {
     expect(normalizeGaMeasurementId("G-RMYV1WV23E")).toBe("G-RMYV1WV23E");

@@ -11,7 +11,11 @@ export interface CspOptions {
   gaMeasurementId?: string;
   /** Per-request nonce authorizing the inline gtag bootstrap script. */
   nonce?: string;
+  /** Cloudflare Turnstile on the subscribe form: allow its script and iframe. */
+  turnstile?: boolean;
 }
+
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 export function buildContentSecurityPolicy(opts: CspOptions = {}): string {
   const ga = Boolean(opts.gaMeasurementId);
@@ -24,6 +28,9 @@ export function buildContentSecurityPolicy(opts: CspOptions = {}): string {
     scriptSrc.push("https://www.googletagmanager.com");
     if (opts.nonce) scriptSrc.push(`'nonce-${opts.nonce}'`);
   }
+  if (opts.turnstile) scriptSrc.push(TURNSTILE_ORIGIN);
+  const frameSrc = ["https://www.youtube-nocookie.com", "https://www.youtube.com", "https://platform.twitter.com"];
+  if (opts.turnstile) frameSrc.push(TURNSTILE_ORIGIN);
 
   const directives = [
     "default-src 'self'",
@@ -41,7 +48,7 @@ export function buildContentSecurityPolicy(opts: CspOptions = {}): string {
   }
 
   directives.push(
-    "frame-src https://www.youtube-nocookie.com https://www.youtube.com https://platform.twitter.com",
+    `frame-src ${frameSrc.join(" ")}`,
     "frame-ancestors 'self'",
   );
 

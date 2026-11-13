@@ -3,6 +3,16 @@
   <form method="post" action="<%= it.base %>/subscribe">
     <input type="hidden" name="source" value="<%= it.source || 'homepage' %>">
     <input type="email" name="email" placeholder="you@example.com" required>
+    <% /* Honeypot: hidden from people, filled by bots. A value here = no mail is sent. */ %>
+    <div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">
+      <label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    </div>
+    <% if (it.turnstileSiteKey) { %>
+    <div class="cf-turnstile" data-sitekey="<%= it.turnstileSiteKey %>" data-size="flexible"></div>
+    <% } %>
     <button type="submit">Subscribe</button>
   </form>
 </div>
+<% if (it.turnstileSiteKey) { %>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<% } %>

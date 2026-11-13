@@ -91,6 +91,9 @@ class SmtpProvider implements EmailProvider {
       subject: input.subject,
       html: input.html,
       text: input.text,
+      headers: config.email.sesConfigurationSet
+        ? { "X-SES-CONFIGURATION-SET": config.email.sesConfigurationSet }
+        : undefined,
     });
   }
 }

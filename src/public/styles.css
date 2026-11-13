@@ -301,6 +301,7 @@ a.chip { display: inline-block; }
 .newsletter h3 { margin: 0; font-style: italic; font-weight: 600; }
 .newsletter form { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.7rem; }
 .newsletter input[type="email"] { flex: 1 1 12rem; }
+.newsletter .cf-turnstile { flex: 1 0 100%; order: 3; }
 
 /* ---------- post page ---------- */
 

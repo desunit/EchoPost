@@ -209,6 +209,10 @@ export const config = {
   email: {
     provider: env("EMAIL_PROVIDER", "console") as "console" | "resend" | "postmark" | "smtp" | "webhook",
     from: env("EMAIL_FROM", "newsletter@example.com"),
+    // SES configuration set name, sent as the X-SES-CONFIGURATION-SET header on
+    // SMTP mail. Gives the newsletter its own SES reputation metrics and events,
+    // apart from other mail on the same SES account. Empty = no header.
+    sesConfigurationSet: env("SES_CONFIGURATION_SET"),
     resendApiKey: env("RESEND_API_KEY"),
     postmarkToken: env("POSTMARK_API_TOKEN"),
     webhookUrl: env("NEWSLETTER_WEBHOOK_URL"),
@@ -222,6 +226,14 @@ export const config = {
       pass: env("SMTP_PASS"),
       secure: env("SMTP_SECURE") === "true",
     },
+  },
+
+  // Cloudflare Turnstile on the public subscribe form. Both keys set = the form
+  // renders the widget and POST /subscribe rejects a missing/invalid token.
+  // Either empty = off (dev, tests).
+  turnstile: {
+    siteKey: env("TURNSTILE_SITE_KEY"),
+    secretKey: env("TURNSTILE_SECRET_KEY"),
   },
 
   analytics: {

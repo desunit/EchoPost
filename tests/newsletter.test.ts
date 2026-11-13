@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import pino from "pino";
-import { NewsletterService } from "../src/modules/newsletter/service.js";
+import { NewsletterService, RESEND_COOLDOWN_MS } from "../src/modules/newsletter/service.js";
 import type { EmailProvider } from "../src/modules/newsletter/providers.js";
 import { testDb } from "./helpers.js";
 import type { DB } from "../src/db/index.js";
@@ -52,6 +52,21 @@ describe("newsletter double opt-in", () => {
     expect(dup.ok).toBe(true);
     expect(dup.message).toContain("already");
     expect(sent).toHaveLength(2); // no extra confirmation email
+  });
+
+  it("sends a pending address at most one confirmation mail per day", async () => {
+    await newsletter.subscribe("victim@example.com");
+    await newsletter.subscribe("victim@example.com");
+    await newsletter.subscribe("Victim@Example.com");
+    expect(sent).toHaveLength(1);
+
+    // After the cooldown a real reader who lost the mail can ask again.
+    db.prepare("UPDATE subscribers SET subscribed_at = ? WHERE email = ?").run(
+      new Date(Date.now() - RESEND_COOLDOWN_MS - 1000).toISOString(),
+      "victim@example.com",
+    );
+    await newsletter.subscribe("victim@example.com");
+    expect(sent).toHaveLength(2);
   });
 
   it("rejects bogus confirmation tokens", async () => {

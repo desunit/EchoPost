@@ -171,6 +171,8 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       base: config.basePath,
       // Absolute origin+basePath, for canonical/OG URLs in templates.
       publicUrl: config.publicUrl,
+      // Cloudflare Turnstile site key for the subscribe form ("" = off).
+      turnstileSiteKey: config.turnstile.siteKey,
       // Sitewide fallback social card when a page has no content image.
       defaultOgImage: `${config.publicUrl}/assets/favicon-192x192.jpg`,
       formatDate,
@@ -195,7 +197,7 @@ export async function buildApp(opts: { startWorker?: boolean } = {}): Promise<Fa
       nonce = randomBytes(16).toString("base64");
       (req as { cspNonce?: string }).cspNonce = nonce;
     }
-    reply.header("Content-Security-Policy", buildContentSecurityPolicy({ gaMeasurementId, nonce }));
+    reply.header("Content-Security-Policy", buildContentSecurityPolicy({ gaMeasurementId, nonce, turnstile: Boolean(config.turnstile.siteKey) }));
 
     // Trailing-slash normalization (301): WordPress permalinks end in "/", but
     // imported slugs are stored without one, so "/slug/" would 404. Redirect to

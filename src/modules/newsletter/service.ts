@@ -29,6 +29,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // abuse. In-memory, mirroring the auth/AMA limiters.
 const subscribeAttempts = new Map<string, { count: number; resetAt: number }>();
 
+/** A pending address gets at most one confirmation mail in this window. */
+export const RESEND_COOLDOWN_MS = 24 * 60 * 60_000;
+
 /** Double-opt-in newsletter flow (PRD 5.9). Tokens are stored hashed. */
 export class NewsletterService {
   private provider: EmailProvider;
@@ -71,7 +74,7 @@ export class NewsletterService {
   /**
    * Subscribe: stores a pending subscriber and sends the confirmation email.
    * Duplicates are handled gracefully — active subscribers get no email,
-   * pending ones get the confirmation resent.
+   * pending ones get the confirmation resent (at most once per RESEND_COOLDOWN_MS).
    */
   async subscribe(emailRaw: string, source = "homepage"): Promise<{ ok: boolean; message: string }> {
     const email = this.normalizeEmail(emailRaw);
@@ -80,6 +83,14 @@ export class NewsletterService {
     const existing = this.getByEmail(email);
     if (existing?.status === "active") {
       return { ok: true, message: "You're already subscribed." };
+    }
+    // One confirmation mail per address per day: a repeated form post must not
+    // send the same (possibly unwilling) person mail after mail.
+    if (existing?.status === "pending" && existing.subscribed_at) {
+      const age = Date.now() - Date.parse(existing.subscribed_at);
+      if (age >= 0 && age < RESEND_COOLDOWN_MS) {
+        return { ok: true, message: "Check your inbox to confirm your subscription." };
+      }
     }
 
     const confirmToken = randomToken();

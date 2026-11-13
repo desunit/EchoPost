@@ -4,6 +4,7 @@ import { cache } from "../lib/cache.js";
 import { visitorHash } from "../lib/crypto.js";
 import { SORT_MODES, FILTER_MODES, type SortMode, type FilterMode } from "../modules/types.js";
 import { embedXReferences, quotedTweetId, quotedTweetUrl } from "../lib/x-embed.js";
+import { verifyTurnstile } from "../lib/turnstile.js";
 
 // Homepage <h1> / <title> brand (SITE_BRAND), and the brand appended to inner
 // page <title> tags (SITE_TITLE, falling back to the brand).
@@ -205,6 +206,27 @@ export function registerPublicRoutes(app: FastifyInstance): void {
         heading: "Too many attempts",
         message: "Please wait a little while before trying again.",
       });
+    }
+    // Honeypot: a person never sees the "website" field. A bot that fills it
+    // gets the normal success page, and no mail is sent.
+    if (body.website) {
+      req.log.info({ source: body.source }, "newsletter: honeypot hit, no mail");
+      return app.view(reply, "message", {
+        title: "Newsletter",
+        heading: "Almost there",
+        message: "Check your inbox to confirm your subscription.",
+      });
+    }
+    if (config.turnstile.siteKey && config.turnstile.secretKey) {
+      const human = await verifyTurnstile(config.turnstile.secretKey, body["cf-turnstile-response"], req.ip);
+      if (!human) {
+        reply.code(400);
+        return app.view(reply, "message", {
+          title: "Newsletter",
+          heading: "Subscription failed",
+          message: "We couldn't verify that you're human. Please go back, reload the page and try again.",
+        });
+      }
     }
     const result = await s.newsletter.subscribe(body.email ?? "", body.source ?? "homepage");
     return app.view(reply, "message", {
